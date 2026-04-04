@@ -122,7 +122,6 @@ Punishments:
       - "Reach"
       - "Hitboxes"
       - "WallHit"
-      - "EntityPierce"
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
@@ -147,11 +146,10 @@ Punishments:
       - "1:1 [log]"
       - "1:0 [webhook]"
       - "2:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
-  AutoclickerKick:
+  TriggerbotKick:
     remove-violations-after: 300
     checks:
-      - "BehaviorB"
-      - "BehaviorC"
+      - "TriggerA"
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
@@ -258,6 +256,16 @@ Punishments:
       - "1:1 [log]"
       - "2:0 [webhook]"
       - "4:0 kick %player% [GroundedGrim] Elytra violation (%check_name%)"
+  ElytraLMKick:
+    remove-violations-after: 300
+    checks:
+      - "ElytraL"
+      - "ElytraM"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "3:0 [webhook]"
+      - "10:0 kick %player% [GroundedGrim] Elytra violation (%check_name%)"
   Elytra:
     remove-violations-after: 300
     checks:
@@ -267,6 +275,8 @@ Punishments:
       - "!ElytraC"
       - "!ElytraD"
       - "!ElytraJ"
+      - "!ElytraL"
+      - "!ElytraM"
     commands:
       - "10:5 [alert]"
       - "10:5 [log]"

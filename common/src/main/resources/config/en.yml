@@ -84,6 +84,19 @@ Simulation:
     # Violation level threshold for setback
     # 1 for old behavior
     setback-violation-threshold: 1
+    # Max residual tolerance for firework look interpolation (blocks/tick)
+    # Increase to 0.10 if getting false positives during fast turns with fireworks
+    firework-residual-cap: 0.05
+
+# Flying prediction - validates creative/ability flying speed
+# This was previously disabled in GrimAC, allowing unlimited fly speed
+FlyingPrediction:
+    # Enable flying movement prediction (validates fly speed)
+    enabled: true
+    # Extra tolerance for flying speed (blocks/tick)
+    # Increase if getting false positives with modified clients (Lunar, etc.)
+    # Default 0.05 covers float precision and minor client differences
+    tolerance: 0.05
 
 # Checks to see if a player entered a block during a movement
 Phase:
@@ -164,25 +177,6 @@ PacketOrderI:
     exempt-placing-while-digging: false
 
 Behavior:
-    b:
-        # Should BehaviorB (attack timing consistency) only check attacks against players?
-        # When true, hitting mobs will not be analyzed
-        players-only: true
-        # Debug mode: alerts every hit with stdDev, mean, interval values
-        debug: false
-        # Cancel hits when VL reaches this threshold (mitigation)
-        mitigate-hits: true
-        mitigation-vl: 3
-    c:
-        # Should BehaviorC (min-max spread) only check attacks against players?
-        players-only: true
-        # Debug mode: alerts every hit with spread, min, max values
-        debug: false
-        # Maximum allowed spread (max - min interval) in ms before flagging
-        spread-threshold: 60
-        # Cancel hits when VL reaches this threshold (mitigation)
-        mitigate-hits: true
-        mitigation-vl: 3
     d:
         # Minimum angle (degrees) between look direction and entity to flag as no-rotation attack
         # 90 = flag only when clearly not looking at target
@@ -194,10 +188,6 @@ Behavior:
         # Debug mode: logs every attack with angle value
         debug: false
 
-    f:
-        # Detects automated sprint reset (W-tap/S-tap macros)
-        players-only: true
-        debug: false
     e:
         # Detects triggerbots that attack at perfect fall distance for critical hits
         # Based on concept by DarknessAC (KillAura P)
@@ -206,6 +196,14 @@ Behavior:
         # How many consecutive identical fractional Y positions before flagging
         # Higher = fewer false positives, lower = faster detection
         buffer-threshold: 15
+
+Trigger:
+    a:
+        # Attack interval spread analysis
+        players-only: true
+        debug: false
+        sample-size: 10
+        max-spread: 50
 
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
