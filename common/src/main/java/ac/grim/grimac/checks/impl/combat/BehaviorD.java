@@ -44,6 +44,7 @@ public class BehaviorD extends Check implements PacketCheck {
 
             if (player.gamemode == GameMode.CREATIVE || player.gamemode == GameMode.SPECTATOR) return;
             if (player.inVehicle()) return;
+            if (player.isGliding || player.wasGliding) return;
             if (System.currentTimeMillis() - player.joinTime < 5000) return;
             if (player.packetStateData.lastPacketWasTeleport) return;
 

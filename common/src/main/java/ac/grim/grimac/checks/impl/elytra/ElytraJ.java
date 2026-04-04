@@ -9,13 +9,16 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
 // Original check by DarknessAC
 // https://github.com/1hendex/DarknessAC
-@CheckData(name = "ElytraJ", description = "Checks for invalid elytra accelerations", experimental = true)
+@CheckData(name = "ElytraJ", description = "Checks for invalid elytra accelerations")
 public class ElytraJ extends Check implements PacketCheck {
 
     private double buffer = 0;
+    private double deltaY = 0;
+    private double deltaXZ = 0;
     private double lastDeltaY = 0;
     private double lastDeltaXZ = 0;
 
@@ -28,6 +31,8 @@ public class ElytraJ extends Check implements PacketCheck {
         if (player.wasTouchingWater
                 || player.wasSwimming
                 || isInWeb()
+                || player.onGround
+                || player.lastOnGround
                 || player.packetStateData.lastPacketWasOnePointSeventeenDuplicate
                 || player.packetStateData.lastPacketWasTeleport) {
             return;
@@ -40,10 +45,11 @@ public class ElytraJ extends Check implements PacketCheck {
         if (event.getPacketType() == PacketType.Play.Client.ENTITY_ACTION) {
             WrapperPlayClientEntityAction action = new WrapperPlayClientEntityAction(event);
             if (action.getAction() == WrapperPlayClientEntityAction.Action.START_FLYING_WITH_ELYTRA) {
-                double deltaX = player.x - player.lastX;
-                double deltaY = player.y - player.lastY;
-                double deltaZ = player.z - player.lastZ;
-                double deltaXZ = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+                double totalSpeed = Math.hypot(deltaXZ, deltaY);
+                if (totalSpeed < 0.1) {
+                    buffer = Math.max(0, buffer - 0.5);
+                    return;
+                }
 
                 double accelY = Math.abs(deltaY - lastDeltaY);
                 double accelXZ = Math.abs(deltaXZ - lastDeltaXZ);
@@ -59,12 +65,14 @@ public class ElytraJ extends Check implements PacketCheck {
             }
         }
 
-        // Track deltas every flying packet for acceleration calculation
-        if (com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
-            double deltaX = player.x - player.lastX;
-            double deltaZ = player.z - player.lastZ;
-            lastDeltaY = player.y - player.lastY;
-            lastDeltaXZ = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+        if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
+            lastDeltaY = deltaY;
+            lastDeltaXZ = deltaXZ;
+
+            double dx = player.x - player.lastX;
+            double dz = player.z - player.lastZ;
+            deltaY = Math.abs(player.y - player.lastY);
+            deltaXZ = Math.hypot(dx, dz);
         }
     }
 
