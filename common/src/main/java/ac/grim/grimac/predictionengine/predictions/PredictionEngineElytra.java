@@ -54,28 +54,70 @@ public class PredictionEngineElytra extends PredictionEngine {
         return vector;
     }
 
-    // Inputs have no effect on movement
+    /**
+     * Applies the vanilla firework boost formula for a single rocket.
+     * From FireworkRocketEntity.tick() (1.21 decompile):
+     *   vel += look * 0.1 + (look * 1.5 - vel) * 0.5
+     * Equivalent to: vel_new = vel * 0.5 + look * 0.85
+     */
+    public static Vector3dm applyFireworkBoost(Vector3dm velocity, Vector3dm look) {
+        return new Vector3dm(
+            velocity.getX() + look.getX() * 0.1 + (look.getX() * 1.5 - velocity.getX()) * 0.5,
+            velocity.getY() + look.getY() * 0.1 + (look.getY() * 1.5 - velocity.getY()) * 0.5,
+            velocity.getZ() + look.getZ() * 0.1 + (look.getZ() * 1.5 - velocity.getZ()) * 0.5
+        );
+    }
+
     @Override
     public List<VectorData> applyInputsToVelocityPossibilities(GrimPlayer player, Set<VectorData> possibleVectors, float speed) {
         List<VectorData> results = new ArrayList<>();
 
+        int maxFireworks = player.fireworks.getMaxFireworksAppliedPossible();
+        boolean hasFireworks = maxFireworks > 0 && (player.isGliding || player.wasGliding);
+
         // We must bruteforce Optifine ShitMath
         for (int shitmath = 0; shitmath <= 1; shitmath++, player.trigHandler.toggleShitMath()) {
             Vector3dm currentLook = ReachUtils.getLook(player, player.yaw, player.pitch);
+
             for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
                 if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
                 for (VectorData data : possibleVectors) {
-                    Vector3dm elytraResult = getElytraMovement(player, data.vector.clone(), currentLook);
-                    if (applyStuckSpeed != 0) elytraResult.multiply(player.stuckSpeedMultiplier);
-                    elytraResult.multiply(0.99F, 0.98F, 0.99F);
-                    VectorData modified = data.returnNewModified(elytraResult, VectorData.VectorType.InputResult);
-                    modified.input = new Vector3dm(0, 0, 0);
-                    results.add(modified);
+
+                    if (hasFireworks) {
+                        Vector3dm lastLook = ReachUtils.getLook(player, player.lastYaw, player.lastPitch);
+
+                        for (int numRockets = 0; numRockets <= maxFireworks; numRockets++) {
+                            if (numRockets == 0) {
+                                addElytraResult(results, player, data, data.vector.clone(), currentLook, applyStuckSpeed != 0);
+                            } else {
+                                for (Vector3dm fireworkLook : new Vector3dm[]{currentLook, lastLook}) {
+                                    Vector3dm boosted = data.vector.clone();
+                                    for (int i = 0; i < numRockets; i++) {
+                                        boosted = applyFireworkBoost(boosted, fireworkLook);
+                                    }
+                                    addElytraResult(results, player, data, boosted, currentLook, applyStuckSpeed != 0);
+                                }
+                            }
+                        }
+                    } else {
+                        addElytraResult(results, player, data, data.vector.clone(), currentLook, applyStuckSpeed != 0);
+                    }
                 }
             }
         }
 
         return results;
+    }
+
+    private void addElytraResult(List<VectorData> results, GrimPlayer player,
+                                  VectorData data, Vector3dm inputVelocity,
+                                  Vector3dm lookVector, boolean applyStuckSpeed) {
+        Vector3dm elytraResult = getElytraMovement(player, inputVelocity, lookVector);
+        if (applyStuckSpeed) elytraResult.multiply(player.stuckSpeedMultiplier);
+        elytraResult.multiply(0.99F, 0.98F, 0.99F);
+        VectorData modified = data.returnNewModified(elytraResult, VectorData.VectorType.InputResult);
+        modified.input = new Vector3dm(0, 0, 0);
+        results.add(modified);
     }
 
     // Yes... you can jump while using an elytra as long as you are on the ground

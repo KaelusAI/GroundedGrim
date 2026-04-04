@@ -49,9 +49,11 @@ public class PacketPlayerAbilities extends Check implements PacketCheck {
 
             lastSentPlayerCanFly = abilities.isFlightAllowed();
 
+            float flySpeed = abilities.getFlySpeed();
             player.latencyUtils.addRealTimeTask(player.lastTransactionSent.get(), () -> {
                 player.canFly = abilities.isFlightAllowed();
                 player.isFlying = abilities.isFlying();
+                player.flySpeed = flySpeed;
             });
 
         }

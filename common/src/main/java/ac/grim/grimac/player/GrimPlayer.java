@@ -166,6 +166,8 @@ public class GrimPlayer implements GrimUser {
     public boolean isFlying;
     public boolean canFly;
     public boolean wasFlying;
+    public boolean flyingPredictionEnabled = true; // config: FlyingPrediction.enabled
+    public double flyingPredictionTolerance = 0.05; // config: FlyingPrediction.tolerance
     public boolean isSwimming;
     public boolean wasSwimming;
     public boolean isClimbing;
@@ -183,7 +185,7 @@ public class GrimPlayer implements GrimUser {
     public int food = 20;
     public float depthStriderLevel;
     public float sneakingSpeedMultiplier = 0.3f;
-    public float flySpeed;
+    public float flySpeed = 0.05f; // vanilla default, updated from PLAYER_ABILITIES packet
     public final VehicleData vehicleData = new VehicleData();
     // The client claims this
     public boolean clientClaimsLastOnGround;

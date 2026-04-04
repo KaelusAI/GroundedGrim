@@ -73,6 +73,7 @@ public class UncertaintyHandler {
     // Fishing rod pulling is another method of adding to a player's velocity
     public final List<Integer> fishingRodPulls = new ArrayList<>();
     public SimpleCollisionBox fireworksBox = null;
+    public double fireworkResidualCap = 0.05;
     public SimpleCollisionBox fishingRodPullBox = null;
 
     public final LastInstance lastFlyingTicks;
@@ -170,42 +171,25 @@ public class UncertaintyHandler {
 
         fishingRodPulls.clear();
 
-        int maxFireworks = player.fireworks.getMaxFireworksAppliedPossible() * 2;
+        int maxFireworks = player.fireworks.getMaxFireworksAppliedPossible();
         if (maxFireworks <= 0 || (!player.isGliding && !player.wasGliding)) {
             return;
         }
 
-        fireworksBox = new SimpleCollisionBox();
-
         Vector3dm currentLook = ReachUtils.getLook(player, player.yaw, player.pitch);
         Vector3dm lastLook = ReachUtils.getLook(player, player.lastYaw, player.lastPitch);
 
-        double antiTickSkipping = player.isPointThree() ? 0 : 0.05; // With 0.03, let that handle tick skipping
+        double residualX = Math.min(fireworkResidualCap, Math.max(0.01,
+            0.5 * Math.abs(currentLook.getX() - lastLook.getX()) * 0.85 * maxFireworks));
+        double residualY = Math.min(fireworkResidualCap, Math.max(0.01,
+            0.5 * Math.abs(currentLook.getY() - lastLook.getY()) * 0.85 * maxFireworks));
+        double residualZ = Math.min(fireworkResidualCap, Math.max(0.01,
+            0.5 * Math.abs(currentLook.getZ() - lastLook.getZ()) * 0.85 * maxFireworks));
 
-        double minX = Math.min(-antiTickSkipping, currentLook.getX()) + Math.min(-antiTickSkipping, lastLook.getX());
-        double minY = Math.min(-antiTickSkipping, currentLook.getY()) + Math.min(-antiTickSkipping, lastLook.getY());
-        double minZ = Math.min(-antiTickSkipping, currentLook.getZ()) + Math.min(-antiTickSkipping, lastLook.getZ());
-        double maxX = Math.max(antiTickSkipping, currentLook.getX()) + Math.max(antiTickSkipping, lastLook.getX());
-        double maxY = Math.max(antiTickSkipping, currentLook.getY()) + Math.max(antiTickSkipping, lastLook.getY());
-        double maxZ = Math.max(antiTickSkipping, currentLook.getZ()) + Math.max(antiTickSkipping, lastLook.getZ());
-
-        minX *= 1.7;
-        minY *= 1.7;
-        minZ *= 1.7;
-        maxX *= 1.7;
-        maxY *= 1.7;
-        maxZ *= 1.7;
-
-        minX = Math.max(-1.7, minX);
-        minY = Math.max(-1.7, minY);
-        minZ = Math.max(-1.7, minZ);
-        maxX = Math.min(1.7, maxX);
-        maxY = Math.min(1.7, maxY);
-        maxZ = Math.min(1.7, maxZ);
-
-        // The maximum movement impact a firework can have is 1.7 blocks/tick
-        // This scales with the look vector linearly
-        fireworksBox = new SimpleCollisionBox(minX, minY, minZ, maxX, maxY, maxZ);
+        fireworksBox = new SimpleCollisionBox(
+            -residualX, -residualY, -residualZ,
+             residualX,  residualY,  residualZ
+        );
     }
 
     public double getOffsetHorizontal(VectorData data) {
@@ -293,12 +277,14 @@ public class UncertaintyHandler {
         // Boats are too glitchy to check.
         // Yes, they have caused an insane amount of uncertainty!
         // Even 1 block offset reduction isn't enough... damn it mojang
+        boolean isElytraFlight = player.isGliding && player.wasGliding;
+
         if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3)) {
-            offset -= 1.2;
+            offset -= isElytraFlight ? 0.3 : 1.2;
         }
 
         if (player.uncertaintyHandler.isOrWasNearGlitchyBlock) {
-            offset -= 0.25;
+            offset -= isElytraFlight ? 0.05 : 0.25;
         }
 
         // This is a section where I hack around current issues with Grim itself...

@@ -114,6 +114,11 @@ public class MovementCheckRunner extends Check implements PositionCheck {
                 final SetBackData setback = update.getSetback();
                 if (setback == null || setback.getVelocity() == null) {
                     update.getTeleportData().modifyVector(player, player.clientVelocity);
+                    if (setback != null && player.isFlying) {
+                        player.clientVelocity.setX(0);
+                        player.clientVelocity.setY(0);
+                        player.clientVelocity.setZ(0);
+                    }
                 } else {
                     // Enforce setback velocity?
                     player.clientVelocity.setX(setback.getVelocity().getX());
@@ -456,11 +461,8 @@ public class MovementCheckRunner extends Check implements PositionCheck {
             // Dead players can't cheat, if you find a way how they could, open an issue
             player.predictedVelocity = new VectorData(new Vector3dm(), VectorData.VectorType.Dead);
             player.clientVelocity = new Vector3dm();
-        } else if (player.disableGrim || (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_8) && player.gamemode == GameMode.SPECTATOR) || player.isFlying || (player.isExemptElytra() && player.isGliding)) {
+        } else if (player.disableGrim || (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_8) && player.gamemode == GameMode.SPECTATOR) || (player.isFlying && !player.flyingPredictionEnabled) || (player.isExemptElytra() && player.isGliding)) {
             // We could technically check spectator but what's the point...
-            // Added complexity to analyze a gamemode used mainly by moderators
-            //
-            // TODO: Re-implement flying support, although LUNAR HAS FLYING CHEATS!!! HOW CAN I CHECK WHEN HALF THE PLAYER BASE IS USING CHEATS???
             player.predictedVelocity = new VectorData(player.actualMovement, VectorData.VectorType.Spectator);
             player.clientVelocity = player.actualMovement.clone();
             player.gravity = 0;
@@ -549,7 +551,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         // Fixes LiquidBounce Jesus NCP, and theoretically AirJump bypass
         //
         // Checking for oldClientVel being too high fixes BleachHack vertical scaffold
-        if (player.getSetbackTeleportUtil().getRequiredSetBack() != null && player.getSetbackTeleportUtil().getRequiredSetBack().getTicksComplete() == 1) {
+        if (!player.isFlying && player.getSetbackTeleportUtil().getRequiredSetBack() != null && player.getSetbackTeleportUtil().getRequiredSetBack().getTicksComplete() == 1) {
             Vector3dm setbackVel = player.getSetbackTeleportUtil().getRequiredSetBack().getVelocity();
             // A player must have velocity going INTO the ground to be able to jump
             // Otherwise they could ignore upwards velocity that isn't useful into more useful upwards velocity (towering)
@@ -570,6 +572,27 @@ public class MovementCheckRunner extends Check implements PositionCheck {
 
         // Let's hope this doesn't desync :)
         if (player.getSetbackTeleportUtil().blockOffsets) offset = 0;
+
+        if (offset > 0) {
+            int chunkX = (int) Math.floor(player.x) >> 4;
+            int chunkZ = (int) Math.floor(player.z) >> 4;
+            int lastChunkX = (int) Math.floor(player.lastX) >> 4;
+            int lastChunkZ = (int) Math.floor(player.lastZ) >> 4;
+            int bbMinChunkX = (int) Math.floor(player.boundingBox.minX) >> 4;
+            int bbMaxChunkX = (int) Math.floor(player.boundingBox.maxX) >> 4;
+            int bbMinChunkZ = (int) Math.floor(player.boundingBox.minZ) >> 4;
+            int bbMaxChunkZ = (int) Math.floor(player.boundingBox.maxZ) >> 4;
+
+            if (!player.compensatedWorld.isChunkLoaded(chunkX, chunkZ)
+                    || !player.compensatedWorld.isChunkLoaded(lastChunkX, lastChunkZ)
+                    || !player.compensatedWorld.isChunkLoaded(bbMinChunkX, bbMinChunkZ)
+                    || !player.compensatedWorld.isChunkLoaded(bbMaxChunkX, bbMaxChunkZ)
+                    || !player.compensatedWorld.isChunkLoaded(bbMinChunkX, bbMaxChunkZ)
+                    || !player.compensatedWorld.isChunkLoaded(bbMaxChunkX, bbMinChunkZ)) {
+                offset = 0;
+            }
+        }
+
 
         if (player.skippedTickInActualMovement || !wasChecked)
             player.uncertaintyHandler.lastPointThree.reset();
@@ -678,5 +701,10 @@ public class MovementCheckRunner extends Check implements PositionCheck {
     @Override
     public void onReload(ConfigManager config) {
         allowSprintJumpingWithElytra = config.getBooleanElse("exploit.allow-sprint-jumping-when-using-elytra", true);
+        player.flyingPredictionEnabled = config.getBooleanElse("FlyingPrediction.enabled", true);
+        player.flyingPredictionTolerance = config.getDoubleElse("FlyingPrediction.tolerance", 0.05);
+        if (player.uncertaintyHandler != null) {
+            player.uncertaintyHandler.fireworkResidualCap = config.getDoubleElse("Simulation.firework-residual-cap", 0.05);
+        }
     }
 }
