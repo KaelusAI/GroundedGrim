@@ -3,6 +3,7 @@ package ac.grim.grimac.utils.anticheat;
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.event.events.GrimJoinEvent;
 import ac.grim.grimac.api.event.events.GrimQuitEvent;
+import ac.grim.grimac.checks.impl.misc.PacketLogger;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.reflection.GeyserUtil;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -78,7 +79,11 @@ public class PlayerDataManager {
 
     public void onDisconnect(User user) {
         GrimPlayer grimPlayer = remove(user);
-        if (grimPlayer != null) GrimAPI.INSTANCE.getEventBus().post(new GrimQuitEvent(grimPlayer));
+        if (grimPlayer != null) {
+            PacketLogger packetLogger = grimPlayer.checkManager.getPacketCheck(PacketLogger.class);
+            if (packetLogger != null) packetLogger.stop();
+            GrimAPI.INSTANCE.getEventBus().post(new GrimQuitEvent(grimPlayer));
+        }
         exemptUsers.remove(user);
 
         UUID uuid = user.getProfile().getUUID();

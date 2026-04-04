@@ -2,6 +2,7 @@ package ac.grim.grimac.manager;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.api.AbstractCheck;
+import ac.grim.grimac.checks.debug.HitboxDebugHandler;
 import ac.grim.grimac.checks.impl.aim.AimDuplicateLook;
 import ac.grim.grimac.checks.impl.aim.AimModulo360;
 import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
@@ -20,6 +21,7 @@ import ac.grim.grimac.checks.impl.exploit.ExploitB;
 import ac.grim.grimac.checks.impl.groundspoof.NoFall;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
 import ac.grim.grimac.checks.impl.misc.GhostBlockMitigation;
+import ac.grim.grimac.checks.impl.misc.PacketLogger;
 import ac.grim.grimac.checks.impl.misc.Post;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
 import ac.grim.grimac.checks.impl.movement.NoSlow;
@@ -159,11 +161,10 @@ public class CheckManager {
                 .put(InventoryE.class, new InventoryE(player))
                 .put(InventoryF.class, new InventoryF(player))
                 .put(InventoryG.class, new InventoryG(player))
-                .put(BehaviorB.class, new BehaviorB(player))
-                .put(BehaviorC.class, new BehaviorC(player))
                 .put(BehaviorD.class, new BehaviorD(player))
-                .put(BehaviorF.class, new BehaviorF(player))
                 .put(BehaviorE.class, new BehaviorE(player))
+                .put(TriggerA.class, new TriggerA(player))
+                .put(PacketLogger.class, new PacketLogger(player))
                 .put(SetbackBlocker.class, new SetbackBlocker(player)) // Must be last class otherwise we can't check while blocking packets
                 .build();
 
@@ -221,6 +222,8 @@ public class CheckManager {
                 .put(ElytraG.class, new ElytraG(player))
                 .put(ElytraH.class, new ElytraH(player))
                 .put(ElytraI.class, new ElytraI(player))
+                .put(ElytraL.class, new ElytraL(player))
+                .put(ElytraM.class, new ElytraM(player))
                 .put(SetbackTeleportUtil.class, new SetbackTeleportUtil(player)) // Avoid teleporting to new position, update safe pos last
                 .put(CompensatedFireworks.class, player.fireworks)
                 .put(SneakingEstimator.class, new SneakingEstimator(player))
@@ -281,6 +284,7 @@ public class CheckManager {
                 .put(Hitboxes.class, new Hitboxes(player)) // Hitboxes is invoked by Reach
                 .put(WallHit.class, new WallHit(player)) // WallHit is invoked by Reach
                 .put(EntityPierce.class, new EntityPierce(player)) // EntityPierce is invoked by Reach
+                .put(HitboxDebugHandler.class, new HitboxDebugHandler(player))
                 .build();
 
         allChecks = new ImmutableClassToInstanceMap.Builder<AbstractCheck>()

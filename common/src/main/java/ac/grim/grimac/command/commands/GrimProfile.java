@@ -13,7 +13,6 @@ import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.context.CommandContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
 
 public class GrimProfile implements BuildableCommand {
     @Override
@@ -31,8 +30,12 @@ public class GrimProfile implements BuildableCommand {
         Sender sender = context.sender();
         PlayerSelector target = context.get("target");
 
-        PlatformPlayer targetPlatformPlayer = target.getSinglePlayer().getPlatformPlayer();
-        if (Objects.requireNonNull(targetPlatformPlayer).isExternalPlayer()) {
+        PlatformPlayer targetPlatformPlayer = target.getSinglePlayer() != null ? target.getSinglePlayer().getPlatformPlayer() : null;
+        if (targetPlatformPlayer == null) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "player-not-found", "%prefix% &cPlayer not found!"));
+            return;
+        }
+        if (targetPlatformPlayer.isExternalPlayer()) {
             sender.sendMessage(MessageUtil.getParsedComponent(sender,"player-not-this-server", "%prefix% &cThis player isn't on this server!"));
             return;
         }
