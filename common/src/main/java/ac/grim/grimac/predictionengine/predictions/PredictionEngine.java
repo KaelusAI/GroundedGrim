@@ -310,6 +310,14 @@ public class PredictionEngine {
 
     // 0.03 has some quite bad interactions with velocity + explosions (one extremely stupid line of code... thanks mojang)
     private void addZeroPointThreeToPossibilities(float speed, GrimPlayer player, List<VectorData> possibleVelocities) {
+        if ((player.isGliding && player.wasGliding) && player.clientVelocity.length() >= player.getMovementThreshold()) {
+            return;
+        }
+
+        if (player.isFlying && player.clientVelocity.length() >= player.getMovementThreshold()) {
+            return;
+        }
+
         Set<VectorData> pointThreePossibilities = new HashSet<>();
 
         // For now just let the player control their Y velocity within 0.03.  Gravity should stop exploits.
@@ -513,47 +521,47 @@ public class PredictionEngine {
         // Flagging groundspoof
         // Flagging flip items
         if (a.isExplosion())
-            aScore -= 5;
+            aScore -= 10;
 
         if (a.isKnockback())
-            aScore -= 5;
+            aScore -= 10;
 
         if (b.isExplosion())
-            bScore -= 5;
+            bScore -= 10;
 
         if (b.isKnockback())
-            bScore -= 5;
+            bScore -= 10;
 
         if (a.isFirstBreadExplosion())
-            aScore += 1;
+            aScore += 2;
 
         if (b.isFirstBreadExplosion())
-            bScore += 1;
+            bScore += 2;
 
         if (a.isFirstBreadKb())
-            aScore += 1;
+            aScore += 2;
 
         if (b.isFirstBreadKb())
-            bScore += 1;
+            bScore += 2;
 
         if (a.isFlipItem())
-            aScore += 3;
+            aScore += 6;
 
         if (b.isFlipItem())
-            bScore += 3;
+            bScore += 6;
 
         if (a.isZeroPointZeroThree())
-            aScore -= 1;
+            aScore -= 2;
 
         if (b.isZeroPointZeroThree())
-            bScore -= 1;
+            bScore -= 2;
 
         // If the player is on the ground but the vector leads the player off the ground
         if ((player.inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && a.vector.getY() >= 0)
-            aScore += 2;
+            aScore += 4;
 
         if ((player.inVehicle() ? player.clientControlledVerticalCollision : player.onGround) && b.vector.getY() >= 0)
-            bScore += 2;
+            bScore += 4;
 
         if (aScore != bScore)
             return Integer.compare(aScore, bScore);
@@ -571,8 +579,13 @@ public class PredictionEngine {
         double pistonY = Collections.max(player.uncertaintyHandler.pistonY);
         double pistonZ = Collections.max(player.uncertaintyHandler.pistonZ);
 
-        additionHorizontal += player.uncertaintyHandler.lastHorizontalOffset;
-        additionVertical += player.uncertaintyHandler.lastVerticalOffset;
+        if (player.isGliding && player.wasGliding) {
+            additionHorizontal += Math.min(0.05, player.uncertaintyHandler.lastHorizontalOffset);
+            additionVertical += Math.min(0.05, player.uncertaintyHandler.lastVerticalOffset);
+        } else {
+            additionHorizontal += player.uncertaintyHandler.lastHorizontalOffset;
+            additionVertical += player.uncertaintyHandler.lastVerticalOffset;
+        }
 
         VectorData originalVec = vector;
         while (originalVec.lastVector != null) {
@@ -592,12 +605,28 @@ public class PredictionEngine {
             bonusY += 0.2;
         }
 
-        if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(2)) {
-            additionHorizontal += 0.1;
-            bonusY += 0.1;
+        if (player.isFlying && player.flyingPredictionEnabled) {
+            double scaledTolerance = Math.min(0.5, player.flyingPredictionTolerance * (player.flySpeed / 0.05));
+            additionHorizontal += scaledTolerance;
+            bonusY += scaledTolerance;
         }
 
-        if (pistonX != 0 || pistonY != 0 || pistonZ != 0) {
+        if ((player.wasGliding && !player.isGliding)
+                || (player.isGliding && (player.onGround || player.lastOnGround || player.verticalCollision))) {
+            double transitionBonus = Math.min(0.25, player.clientVelocity.length() * 0.10);
+            additionHorizontal += transitionBonus;
+            bonusY += 0.25;
+        }
+
+        boolean isElytraFlight = player.isGliding && player.wasGliding;
+
+        if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(2)) {
+            double entityUncertainty = isElytraFlight ? 0.03 : 0.1;
+            additionHorizontal += entityUncertainty;
+            bonusY += entityUncertainty;
+        }
+
+        if (!isElytraFlight && (pistonX != 0 || pistonY != 0 || pistonZ != 0)) {
             additionHorizontal += 0.1;
             bonusY += 0.1;
         }
@@ -625,6 +654,18 @@ public class PredictionEngine {
             maxVector.setY(0);
         }
 
+        if (isElytraFlight && (player.verticalCollision || player.lastOnGround || player.onGround)
+                && player.uncertaintyHandler.fireworksBox != null) {
+            double groundBonus = Math.abs(vector.vector.getY()) * 0.15;
+            double bonus = Math.min(0.2, groundBonus);
+            minVector.setX(minVector.getX() - bonus);
+            minVector.setZ(minVector.getZ() - bonus);
+            maxVector.setX(maxVector.getX() + bonus);
+            maxVector.setZ(maxVector.getZ() + bonus);
+            if (vector.vector.getY() < 0) maxVector.setY(Math.max(maxVector.getY(), 0));
+            if (vector.vector.getY() > 0) minVector.setY(Math.min(minVector.getY(), 0));
+        }
+
         // Handles stuff like missing idle packet causing gravity to be missed (plus 0.03 of course)
         double gravityOffset = player.pointThreeEstimator.getAdditionalVerticalUncertainty(vector);
         if (gravityOffset > 0) {
@@ -648,8 +689,7 @@ public class PredictionEngine {
             minVector.setY(minVector.getY() - player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY));
         }
 
-        // Hidden slime block bounces by missing idle tick and 0.03
-        if (player.actualMovement.getY() >= 0 && player.uncertaintyHandler.influencedByBouncyBlock()) {
+        if (!isElytraFlight && player.actualMovement.getY() >= 0 && player.uncertaintyHandler.influencedByBouncyBlock()) {
             if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty != 0 && !vector.isJump()) { // jumping overrides slime block
                 if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty > maxVector.getY()) {
                     maxVector.setY(player.uncertaintyHandler.thisTickSlimeBlockUncertainty);
@@ -685,15 +725,16 @@ public class PredictionEngine {
         box.maxZ += sneaking.getSneakingPotentialHiddenVelocity().maxZ;
 
         if (player.uncertaintyHandler.fireworksBox != null) {
-            double minXdiff = Math.min(0, player.uncertaintyHandler.fireworksBox.minX - originalVec.vector.getX());
-            double minYdiff = Math.min(0, player.uncertaintyHandler.fireworksBox.minY - originalVec.vector.getY());
-            double minZdiff = Math.min(0, player.uncertaintyHandler.fireworksBox.minZ - originalVec.vector.getZ());
-            double maxXdiff = Math.max(0, player.uncertaintyHandler.fireworksBox.maxX - originalVec.vector.getX());
-            double maxYdiff = Math.max(0, player.uncertaintyHandler.fireworksBox.maxY - originalVec.vector.getY());
-            double maxZdiff = Math.max(0, player.uncertaintyHandler.fireworksBox.maxZ - originalVec.vector.getZ());
-
-            box.expandMin(minXdiff, minYdiff, minZdiff);
-            box.expandMax(maxXdiff, maxYdiff, maxZdiff);
+            box.expandMin(
+                player.uncertaintyHandler.fireworksBox.minX,
+                player.uncertaintyHandler.fireworksBox.minY,
+                player.uncertaintyHandler.fireworksBox.minZ
+            );
+            box.expandMax(
+                player.uncertaintyHandler.fireworksBox.maxX,
+                player.uncertaintyHandler.fireworksBox.maxY,
+                player.uncertaintyHandler.fireworksBox.maxZ
+            );
         }
 
         SimpleCollisionBox rod = player.uncertaintyHandler.fishingRodPullBox;
@@ -706,7 +747,7 @@ public class PredictionEngine {
         // a Y velocity of 0 to 0.1.  Because 0.03 we don't know this so just give lenience here
         //
         // Stuck on edge also reduces the player's movement.  It's wrong by 0.05 so hard to implement.
-        if (player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0) || player.uncertaintyHandler.isSteppingOnSlime) {
+        if (!isElytraFlight && (player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0) || player.uncertaintyHandler.isSteppingOnSlime)) {
             // Avoid changing Y axis
             box.expandToAbsoluteCoordinates(0, box.maxY, 0);
         }
@@ -743,8 +784,11 @@ public class PredictionEngine {
         //
         // Or the player is switching in and out of controlling a vehicle, in which friction messes it up
         //
-        if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(0) || player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3) || (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && vector.vector.getY() > 0 && vector.isZeroPointZeroThree() && !Collisions.isEmpty(player, GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.lastX, vector.vector.getY() + player.lastY + 0.6, player.lastZ, 0.6f, 1.26f)))) {
+        boolean hardEntityNearby = player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3);
+        if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(0) || (!isElytraFlight && hardEntityNearby) || (!isElytraFlight && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && vector.vector.getY() > 0 && vector.isZeroPointZeroThree() && !Collisions.isEmpty(player, GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.lastX, vector.vector.getY() + player.lastY + 0.6, player.lastZ, 0.6f, 1.26f)))) {
             box.expandToAbsoluteCoordinates(0, 0, 0);
+        } else if (isElytraFlight && hardEntityNearby) {
+            box.expand(0.3, 0.1, 0.3);
         }
 
         // Handle missing a tick with friction in vehicles

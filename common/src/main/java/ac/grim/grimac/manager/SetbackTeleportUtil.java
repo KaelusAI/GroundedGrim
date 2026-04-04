@@ -7,7 +7,6 @@ import ac.grim.grimac.checks.type.PostPredictionCheck;
 import ac.grim.grimac.platform.api.entity.GrimEntity;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngine;
-import ac.grim.grimac.predictionengine.predictions.PredictionEngineElytra;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngineNormal;
 import ac.grim.grimac.predictionengine.predictions.PredictionEngineWater;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
@@ -25,7 +24,6 @@ import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.math.VectorUtils;
 import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
-import ac.grim.grimac.utils.nmsutil.ReachUtils;
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import com.github.retrooper.packetevents.protocol.player.ClientVersion;
@@ -52,6 +50,8 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
     public final ConcurrentLinkedQueue<TeleportData> pendingTeleports = new ConcurrentLinkedQueue<>();
     private final Random random = new Random();
     // Sync to netty, a player MUST accept a teleport to spawn into the world
+    private double safePositionThreshold = 0.001;
+
     // A teleport is used to end the loading screen.  Some cheats pretend to never end the loading screen
     // in an attempt to disable the anticheat.  Be careful.
     // We fix this by blocking serverbound movements until the player is out of the loading screen.
@@ -77,6 +77,11 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
         // Grab friction now when we know player on ground and other variables
         Vector3dm afterTickFriction = player.clientVelocity.clone();
 
+        if ((player.isGliding || player.wasGliding) && afterTickFriction.length() > 4.0) {
+            double scale = 4.0 / afterTickFriction.length();
+            afterTickFriction.multiply(scale);
+        }
+
         // We must first check if the player has accepted their setback
         // If the setback isn't complete, then this position is illegitimate
         if (predictionComplete.getData().getSetback() != null) {
@@ -86,12 +91,41 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             lastKnownGoodPosition = new SetbackPosWithVector(new Vector3d(player.x, player.y, player.z), afterTickFriction);
         } else if (requiredSetBack == null || requiredSetBack.isComplete()) {
             cheatVehicleInterpolationDelay--;
-            // No simulation... we can do that later. We just need to know the valid position.
-            // As we didn't setback here, the new position is known to be safe!
-            lastKnownGoodPosition = new SetbackPosWithVector(new Vector3d(player.x, player.y, player.z), afterTickFriction);
+
+            if (!blockOffsets) {
+                double offset = predictionComplete.getOffset();
+
+                if (offset < safePositionThreshold) {
+                    lastKnownGoodPosition = new SetbackPosWithVector(
+                        new Vector3d(player.x, player.y, player.z), afterTickFriction);
+                } else if (lastKnownGoodPosition != null) {
+                    Vector3d oldPos = lastKnownGoodPosition.pos;
+                    Vector3dm oldVel = lastKnownGoodPosition.vector;
+
+                    if (player.isFlying) {
+                    } else {
+                        double gravity = player.compensatedEntities.self.getAttributeValue(
+                            com.github.retrooper.packetevents.protocol.attribute.Attributes.GRAVITY);
+                        double newVelY = (oldVel.getY() - gravity) * 0.98;
+                        double newY = oldPos.getY() + newVelY;
+
+                        newY = Math.min(newY, player.y);
+                        newY = Math.max(newY, -64);
+
+                        lastKnownGoodPosition = new SetbackPosWithVector(
+                            new Vector3d(oldPos.getX(), newY, oldPos.getZ()),
+                            new Vector3dm(oldVel.getX(), newVelY, oldVel.getZ()));
+                    }
+                }
+            }
         }
 
         if (requiredSetBack != null) requiredSetBack.tick();
+    }
+
+    @Override
+    public void onReload(ac.grim.grimac.api.config.ConfigManager config) {
+        safePositionThreshold = config.getDoubleElse("Simulation.threshold", 0.001);
     }
 
     public void executeForceResync() {
@@ -141,8 +175,9 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             if (player.hasGravity)
                 vector.add(0.0D, -player.gravity / 4.0D, 0.0D);
         } else if (player.isGliding) {
-            PredictionEngineElytra.getElytraMovement(player, vector, ReachUtils.getLook(player, player.yaw, player.pitch)).multiply(player.stuckSpeedMultiplier).multiply(0.99F, 0.98F, 0.99F);
-            vector.setY(vector.getY() - 0.05); // Make the player fall a bit
+            double gravity = player.compensatedEntities.self.getAttributeValue(com.github.retrooper.packetevents.protocol.attribute.Attributes.GRAVITY);
+            vector.multiply(0.95F, 0.98F, 0.95F); // moderate horizontal drag
+            vector.setY(vector.getY() - gravity); // real gravity
         } else { // Gliding doesn't have friction, we handle it differently
             PredictionEngineNormal.staticVectorEndOfTick(player, vector); // Lava and normal movement
         }
@@ -160,6 +195,7 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
             return; // The player has permission to cheat
         requiredSetBack.setPlugin(false); // The player has illegal movement, block from vanilla ac override
         if (isPendingSetback()) return; // Don't spam setbacks
+
 
         // Only let us full resync once every five seconds to prevent unneeded bukkit load
         if (System.currentTimeMillis() - lastWorldResync > 5 * 1000) {
@@ -282,6 +318,8 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
 
             if (data.getVelocity() != null && data.getVelocity().lengthSquared() > 0) {
                 player.user.sendPacket(new WrapperPlayServerEntityVelocity(player.entityID, new Vector3d(data.getVelocity().getX(), data.getVelocity().getY(), data.getVelocity().getZ())));
+            } else if (player.isGliding) {
+                player.user.sendPacket(new WrapperPlayServerEntityVelocity(player.entityID, new Vector3d(0, 0, 0)));
             }
         } finally {
             isSendingSetback = false;
@@ -401,6 +439,10 @@ public class SetbackTeleportUtil extends Check implements PostPredictionCheck {
      * @return Whether the player has loaded the chunk and accepted a teleport to correct movement or not
      */
     public boolean insideUnloadedChunk() {
+        if (!player.disableGrim && !hasAcceptedSpawnTeleport) return true;
+
+        if (player.isFlying) return false;
+
         Column column = player.compensatedWorld.getChunk(GrimMath.floor(player.x) >> 4, GrimMath.floor(player.z) >> 4);
 
         // If true, the player is in an unloaded chunk

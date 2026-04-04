@@ -356,8 +356,11 @@ public class PointThreeEstimator {
         // Determine if the player can make an input below 0.03
         double minimum = Double.MAX_VALUE;
 
-        if ((player.isGliding || player.wasGliding) && !player.packetStateData.didLastMovementIncludePosition) {
-            return true;
+        if ((player.isGliding && player.wasGliding) && !player.packetStateData.didLastMovementIncludePosition) {
+            double elytraSpeed = player.clientVelocity.length();
+            if (elytraSpeed < player.getMovementThreshold()) {
+                return true;
+            }
         }
 
         // Thankfully vehicles don't have 0.03
