@@ -15,7 +15,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientIn
 
 // Based on ideas from DarknessAC
 // https://github.com/1hendex/DarknessAC
-@CheckData(name = "BehaviorE", configName = "Behavior", description = "Checks for perfect fall distance when attack", experimental = true)
+@CheckData(name = "BehaviorE", configName = "Behavior", description = "Checks for perfect fall distance when attack")
 public class BehaviorE extends Check implements PacketCheck {
 
     private double lastJumpY = 0;
