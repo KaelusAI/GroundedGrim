@@ -13,10 +13,12 @@ import java.util.List;
 import java.util.Set;
 
 public class PredictionEngineElytra extends PredictionEngine {
+    private static final Vector3dm ZERO_INPUT = new Vector3dm(0, 0, 0);
+
     public static Vector3dm getElytraMovement(GrimPlayer player, Vector3dm vector, Vector3dm lookVector) {
         float pitchRadians = GrimMath.radians(player.pitch);
         double horizontalSqrt = Math.sqrt(lookVector.getX() * lookVector.getX() + lookVector.getZ() * lookVector.getZ());
-        double horizontalLength = vector.clone().setY(0).length();
+        double horizontalLength = Math.sqrt(vector.getX() * vector.getX() + vector.getZ() * vector.getZ());
         double length = lookVector.length();
 
         // Mojang changed from using their math to using regular java math in 1.18.2 elytra movement
@@ -60,12 +62,10 @@ public class PredictionEngineElytra extends PredictionEngine {
      *   vel += look * 0.1 + (look * 1.5 - vel) * 0.5
      * Equivalent to: vel_new = vel * 0.5 + look * 0.85
      */
-    public static Vector3dm applyFireworkBoost(Vector3dm velocity, Vector3dm look) {
-        return new Vector3dm(
-            velocity.getX() + look.getX() * 0.1 + (look.getX() * 1.5 - velocity.getX()) * 0.5,
-            velocity.getY() + look.getY() * 0.1 + (look.getY() * 1.5 - velocity.getY()) * 0.5,
-            velocity.getZ() + look.getZ() * 0.1 + (look.getZ() * 1.5 - velocity.getZ()) * 0.5
-        );
+    public static void applyFireworkBoost(Vector3dm velocity, Vector3dm look) {
+        velocity.setX(velocity.getX() * 0.5 + look.getX() * 0.85);
+        velocity.setY(velocity.getY() * 0.5 + look.getY() * 0.85);
+        velocity.setZ(velocity.getZ() * 0.5 + look.getZ() * 0.85);
     }
 
     @Override
@@ -78,22 +78,22 @@ public class PredictionEngineElytra extends PredictionEngine {
         // We must bruteforce Optifine ShitMath
         for (int shitmath = 0; shitmath <= 1; shitmath++, player.trigHandler.toggleShitMath()) {
             Vector3dm currentLook = ReachUtils.getLook(player, player.yaw, player.pitch);
+            Vector3dm lastLook = hasFireworks ? ReachUtils.getLook(player, player.lastYaw, player.lastPitch) : null;
+            Vector3dm[] fireworkLooks = hasFireworks ? new Vector3dm[]{currentLook, lastLook} : null;
 
             for (int applyStuckSpeed = 1; applyStuckSpeed >= 0; applyStuckSpeed--) {
                 if (applyStuckSpeed == 0 && player.isForceStuckSpeed()) break;
                 for (VectorData data : possibleVectors) {
 
                     if (hasFireworks) {
-                        Vector3dm lastLook = ReachUtils.getLook(player, player.lastYaw, player.lastPitch);
-
                         for (int numRockets = 0; numRockets <= maxFireworks; numRockets++) {
                             if (numRockets == 0) {
                                 addElytraResult(results, player, data, data.vector.clone(), currentLook, applyStuckSpeed != 0);
                             } else {
-                                for (Vector3dm fireworkLook : new Vector3dm[]{currentLook, lastLook}) {
+                                for (Vector3dm fireworkLook : fireworkLooks) {
                                     Vector3dm boosted = data.vector.clone();
                                     for (int i = 0; i < numRockets; i++) {
-                                        boosted = applyFireworkBoost(boosted, fireworkLook);
+                                        applyFireworkBoost(boosted, fireworkLook);
                                     }
                                     addElytraResult(results, player, data, boosted, currentLook, applyStuckSpeed != 0);
                                 }
@@ -116,7 +116,7 @@ public class PredictionEngineElytra extends PredictionEngine {
         if (applyStuckSpeed) elytraResult.multiply(player.stuckSpeedMultiplier);
         elytraResult.multiply(0.99F, 0.98F, 0.99F);
         VectorData modified = data.returnNewModified(elytraResult, VectorData.VectorType.InputResult);
-        modified.input = new Vector3dm(0, 0, 0);
+        modified.input = ZERO_INPUT;
         results.add(modified);
     }
 
