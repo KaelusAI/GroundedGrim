@@ -240,10 +240,15 @@ public class PacketEntity extends TypedPacketEntity {
         return ReachInterpolationData.combineCollisionBox(oldPacketLocation.getPossibleHitboxCombined(), newPacketLocation.getPossibleHitboxCombined());
     }
 
-    // Returns the minimum possible collision box (conservative estimate for non-target entities)
-    // Used by WorldRayTrace to shrink non-target entity hitboxes for WallHit/EntityPierce checks
+    // Returns the minimum possible collision box (intersection across interpolation steps)
+    // If a ray passes through this box, it DEFINITELY passes through the entity at every possible position
+    // Used by WorldRayTrace/EntityPierce to check if a non-target entity blocks the attack ray
     public CollisionBox getMinimumPossibleCollisionBoxes() {
-        return getPossibleCollisionBoxes();
+        if (oldPacketLocation == null) {
+            return newPacketLocation.getOverlapHitboxCombined();
+        }
+
+        return ReachInterpolationData.getOverlapHitbox(oldPacketLocation.getOverlapHitboxCombined(), newPacketLocation.getOverlapHitboxCombined());
     }
 
     public OptionalInt getPotionEffectLevel(PotionType effect) {
