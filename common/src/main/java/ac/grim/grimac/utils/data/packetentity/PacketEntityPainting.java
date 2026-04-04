@@ -16,4 +16,9 @@ public class PacketEntityPainting extends PacketEntity {
         super(player, uuid, EntityTypes.PAINTING, x, y, z);
         this.direction = direction;
     }
+
+    @Override
+    public boolean canHit() {
+        return false;
+    }
 }
