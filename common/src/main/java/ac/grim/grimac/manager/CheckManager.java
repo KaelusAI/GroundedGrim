@@ -24,6 +24,7 @@ import ac.grim.grimac.checks.impl.misc.GhostBlockMitigation;
 import ac.grim.grimac.checks.impl.misc.PacketLogger;
 import ac.grim.grimac.checks.impl.misc.Post;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
+import ac.grim.grimac.checks.impl.movement.AirStuck;
 import ac.grim.grimac.checks.impl.movement.NoSlow;
 import ac.grim.grimac.checks.impl.movement.PredictionRunner;
 import ac.grim.grimac.checks.impl.movement.SetbackBlocker;
@@ -161,9 +162,13 @@ public class CheckManager {
                 .put(InventoryE.class, new InventoryE(player))
                 .put(InventoryF.class, new InventoryF(player))
                 .put(InventoryG.class, new InventoryG(player))
+                .put(AutoTotemA.class, new AutoTotemA(player))
+                .put(AutoTotemB.class, new AutoTotemB(player))
+                .put(AutoTotemC.class, new AutoTotemC(player))
                 .put(BehaviorD.class, new BehaviorD(player))
                 .put(BehaviorE.class, new BehaviorE(player))
                 .put(TriggerA.class, new TriggerA(player))
+                .put(AirStuck.class, new AirStuck(player))
                 .put(PacketLogger.class, new PacketLogger(player))
                 .put(SetbackBlocker.class, new SetbackBlocker(player)) // Must be last class otherwise we can't check while blocking packets
                 .build();
