@@ -189,6 +189,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -314,6 +316,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -323,13 +327,21 @@ Hitboxes:
 Reach:
     # Limite per rilevare un attacco oltre la distanza massima
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Distanza di portata extra (blocchi) aggiunta in cima alla soglia.
+    # A differenza della soglia (che espande l'hitbox), questo estende solo la distanza di portata consentita,
+    # senza influenzare il controllo dell'intersezione dei raggi delle hitbox.
+    # Aumenta se Reach genera falsi positivi a causa di lag/interpolazione. 0.0 = predefinito (rigoroso).
     extra-expansion: 0.0
     # Annulla gli attacchi impossibili
     block-impossible-hits: true
-    # Abilita l'invio di pacchetti aggiuntivi per il rilevamento degli attacchi
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # Abilita il salto in sprint con l'elytra
@@ -342,8 +354,13 @@ exploit:
 # Enable logging plugins who have injected into netty on join to debug compatibility issues
 debug-pipeline-on-join: false
 
-# Enables experimental checks
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

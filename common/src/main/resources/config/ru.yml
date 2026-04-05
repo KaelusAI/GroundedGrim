@@ -199,6 +199,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -324,6 +326,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -336,20 +340,22 @@ Reach:
     # Существует 0.03 принудительное расширение с 1.9-1.18.1 (не 1.18.2), или некоторыми комбинациями клиент/сервер из-за
     # изменениями и ограничениями протокола. Эта проверка наиболее эффективна с клиентами 1.7/1.8 на серверах 1.8.
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Дополнительное расстояние достижения (блоки) добавляется сверху порога.
+    # В отличие от порога (который расширяет хитбокс), это расширяет только допустимое расстояние достижения,
+    # не влияя на проверку пересечения лучей хитбоксов.
+    # Увеличьте, если Reach генерирует ложные срабатывания из-за лага/интерполяции. 0.0 = по умолчанию (строгое).
     extra-expansion: 0.0
     # Должны ли мы отменять удары, которые, как мы знаем, невозможны?
     # Удары 3.00-3.03 могут пройти, но все равно будут замечены из-за ограничений на порядок пакетов.
     block-impossible-hits: true
-    # Это отправит дополнительный пакет в конце каждого тика, чтобы увеличить вероятность поимки читов.
-    # Это встраивается в список соединений сервера для отправки последнего пакета непосредственно перед тем, как сервер будет удален.
-    # Включение этой функции увеличит использование полосы пропускания для всех игроков.
-    # Это не снизит общую производительность сервера
-    # Если включить эту функцию, будет поймано больше читеров.
-    # Если оставить эту функцию отключенной, читеры все равно будут отлавливаться и не будут вызывать ложных срабатываний.
-    # Если вы не являетесь PvP-сервером 1.8, этот дополнительный пакет не рекомендуется.
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     allow-sprint-jumping-when-using-elytra: true
@@ -360,8 +366,13 @@ exploit:
 # Включить запись в журнал плагинов, которые внедрились в netty при присоединении для отладки проблем совместимости
 debug-pipeline-on-join: false
 
-# Включает экспериментальные проверки
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

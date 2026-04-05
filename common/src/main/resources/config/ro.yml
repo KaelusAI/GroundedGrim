@@ -198,6 +198,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -323,6 +325,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -335,20 +339,22 @@ Reach:
     # Există o extindere forțată de 0.03 cu clienți 1.9-1.18.1 (nu 1.18.2), sau unele combinații client/server datorită
     # schimbărilor și limitărilor protocolului. Acest check este cel mai puternic cu clienți 1.7/1.8 pe servere 1.8.
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Distanță de reach suplimentară (blocuri) adăugată deasupra pragului.
+    # Spre deosebire de prag (care extinde hitbox-ul), aceasta extinde doar distanța de reach permisă,
+    # fără a afecta verificarea intersecției de raze a hitbox-urilor.
+    # Mărește dacă Reach generează false positive din cauza lag/interpolării. 0.0 = implicit (strict).
     extra-expansion: 0.0
     # Ar trebui să anulăm loviturile imposibile?
     # Lovituri de 3.00-3.03 pot trece dar tot vor fi marcate, din cauza limitărilor de ordine a pachetelor
     block-impossible-hits: true
-    # Va trimite un pachet suplimentar la sfârșitul fiecărui tick pentru a crește șansele de a prinde cheat-uri
-    # Injectează în lista de conexiuni a serverului pentru a trimite un pachet final chiar înainte ca serverul să facă flush
-    # Activarea va crește traficul pentru toți jucătorii
-    # Nu va scădea performanța serverului
-    # Activarea va prinde mai mulți cheateri.
-    # Lăsarea dezactivată va prinde totuși cheateri și nu va cauza false positive
-    # Dacă nu ești server PvP 1.8, acest pachet suplimentar nu este recomandat
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # Poți obține viteze mari sărind sprint cu elytra, aceasta previne exploitul dacă e setat pe false
@@ -364,8 +370,13 @@ exploit:
 # Activează logarea pluginurilor care s-au injectat în netty la intrare pentru debugging de compatibilitate
 debug-pipeline-on-join: false
 
-# Activează verificări experimentale
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

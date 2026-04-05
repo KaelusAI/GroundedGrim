@@ -198,6 +198,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -323,6 +325,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -335,20 +339,22 @@ Reach:
     # Er is 0.03 geforceerde uitbreiding met 1.9-1.18.1 (niet 1.18.2), of sommige client/server combinaties vanwege
     # protocol veranderingen en beperkingen. Deze controle is het krachtigst met 1.7/1.8 clients op 1.8 servers
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Aanvullende bereikafstand (blokken) die boven de drempel wordt toegevoegd.
+    # In tegenstelling tot drempel (die de hitbox uitbreidt), breidt dit alleen de toegestane bereikafstand uit,
+    # zonder de rayintersectiecontrole van Hitboxes te beïnvloeden.
+    # Verhoog als Reach valse positieven geeft vanwege lag/interpolatie. 0.0 = standaard (strikt).
     extra-expansion: 0.0
     # Moeten we hits annuleren waarvan we weten dat ze onmogelijk zijn?
     # 3.00-3.03 hits kunnen doorkomen, maar toch gemarkeerd worden, vanwege pakketvolgorderbeperkingen
     block-impossible-hits: true
-    # Dit stuurt een extra pakket aan het eind van elke tick om de kans op het vangen van valsspelers te vergroten
-    # Dit injecteert in de verbindingslijst van de server om een laatste pakket te sturen net voordat de server doorspoelt
-    # Door dit in te schakelen zal het bandbreedtegebruik voor alle spelers toenemen
-    # Dit zal de algehele serverprestaties niet verlagen
-    # Door dit in te schakelen worden meer valsspelers gepakt
-    # Als je dit uitgeschakeld laat, worden nog steeds valsspelers gepakt en zullen er geen valse positieven ontstaan
-    # Tenzij je een 1.8 PvP server bent, wordt dit extra pakket niet aangeraden
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # Je kunt hoge snelheden krijgen als je sprint met een elytra, dit voorkomt de exploit als het op false staat
@@ -364,8 +370,13 @@ exploit:
 # Logging plugins inschakelen die geïnjecteerd zijn in netty on join om compatibiliteitsproblemen te debuggen
 debug-pipeline-on-join: false
 
-# Experimentele controles inschakelen
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
