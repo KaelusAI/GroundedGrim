@@ -14,6 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @CheckData(name = "Simulation", decay = 0.02)
 public class OffsetHandler extends Check implements PostPredictionCheck {
     private static final AtomicInteger flags = new AtomicInteger(0);
+
+    public static int getLastFlagId() {
+        return flags.get() & 255;
+    }
+
     // Config
     private double setbackDecayMultiplier;
     private double threshold;

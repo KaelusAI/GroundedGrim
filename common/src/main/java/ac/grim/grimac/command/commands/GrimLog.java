@@ -12,7 +12,10 @@ import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.context.CommandContext;
 import org.incendo.cloud.parser.standard.IntegerParser;
+import org.incendo.cloud.parser.standard.StringParser;
 import org.jetbrains.annotations.NotNull;
+
+import ac.grim.grimac.checks.impl.prediction.OffsetHandler;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -80,6 +83,23 @@ public class GrimLog implements BuildableCommand {
         commandManager
                 .command(command)
                 .command(commandManager.commandBuilder("gl").proxies(command));
+
+        Command<Sender> lastCommand = commandManager.commandBuilder("grim", "grimac")
+                .literal("log", "logs")
+                .literal("last")
+                .permission("grim.log")
+                .optional("count", IntegerParser.integerParser(1, 256))
+                .handler(this::handleLogLast)
+                .manager(commandManager)
+                .build();
+        commandManager.command(lastCommand);
+
+        commandManager.command(commandManager.commandBuilder("grim", "grimac")
+                .literal("log", "logs")
+                .literal("range")
+                .permission("grim.log")
+                .required("range", StringParser.stringParser())
+                .handler(this::handleLogRange));
     }
 
     private void handleLog(@NotNull CommandContext<Sender> context) {
@@ -92,5 +112,77 @@ public class GrimLog implements BuildableCommand {
             return;
         }
         sendLogAsync(sender, builder.toString(), string -> {}, "text/yaml");
+    }
+
+    private void handleLogLast(@NotNull CommandContext<Sender> context) {
+        Sender sender = context.sender();
+        int count = context.getOrDefault("count", 1);
+
+        int lastId = OffsetHandler.getLastFlagId();
+        if (lastId == 0) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "upload-log-not-found", "%prefix% &cNo flags recorded yet"));
+            return;
+        }
+
+        StringBuilder combined = new StringBuilder();
+        int found = 0;
+        for (int i = 0; i < count; i++) {
+            int id = ((lastId - 1 - i) & 255) + 1;
+            StringBuilder flag = SuperDebug.getFlag(id);
+            if (flag != null) {
+                if (found > 0) combined.append("\n\n--- Flag #").append(id).append(" ---\n\n");
+                combined.append(flag);
+                found++;
+            }
+        }
+
+        if (found == 0) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "upload-log-not-found", "%prefix% &cNo flags found"));
+            return;
+        }
+
+        sendLogAsync(sender, combined.toString(), string -> {}, "text/yaml");
+    }
+
+    private void handleLogRange(@NotNull CommandContext<Sender> context) {
+        Sender sender = context.sender();
+        String range = context.get("range");
+
+        String[] parts = range.split("-");
+        if (parts.length != 2) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "upload-log-not-found", "%prefix% &cFormat: /grim log range <from>-<to> (e.g. 1-10)"));
+            return;
+        }
+
+        int from, to;
+        try {
+            from = Integer.parseInt(parts[0].trim());
+            to = Integer.parseInt(parts[1].trim());
+        } catch (NumberFormatException e) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "upload-log-not-found", "%prefix% &cInvalid range format"));
+            return;
+        }
+
+        if (from > to) { int tmp = from; from = to; to = tmp; }
+        if (to - from > 255) to = from + 255;
+
+        StringBuilder combined = new StringBuilder();
+        int found = 0;
+        for (int id = from; id <= to; id++) {
+            StringBuilder flag = SuperDebug.getFlag(id);
+            if (flag != null) {
+                if (found > 0) combined.append("\n\n--- Flag #").append(id).append(" ---\n\n");
+                else combined.append("--- Flag #").append(id).append(" ---\n\n");
+                combined.append(flag);
+                found++;
+            }
+        }
+
+        if (found == 0) {
+            sender.sendMessage(MessageUtil.getParsedComponent(sender, "upload-log-not-found", "%prefix% &cNo flags found in range " + from + "-" + to));
+            return;
+        }
+
+        sendLogAsync(sender, combined.toString(), string -> {}, "text/yaml");
     }
 }
