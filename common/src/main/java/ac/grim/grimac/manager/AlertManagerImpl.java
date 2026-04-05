@@ -17,8 +17,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -372,7 +374,11 @@ public final class AlertManagerImpl implements AlertManager, ConfigReloadable, S
      * @return listeners this message was sent to, null means console
      */
     public Set<PlatformPlayer> sendVerbose(Component component, @Nullable Set<@Nullable PlatformPlayer> excluding) {
-        return AlertType.VERBOSE.send(component, excluding);
+        return sendFiltered(AlertType.VERBOSE, component, excluding, null);
+    }
+
+    public Set<PlatformPlayer> sendVerbose(Component component, @Nullable Set<@Nullable PlatformPlayer> excluding, @Nullable String violatorName) {
+        return sendFiltered(AlertType.VERBOSE, component, excluding, violatorName);
     }
 
     /**
@@ -381,7 +387,45 @@ public final class AlertManagerImpl implements AlertManager, ConfigReloadable, S
      * @return listeners this message was sent to, null means console
      */
     public Set<PlatformPlayer> sendAlert(Component component, @Nullable Set<@Nullable PlatformPlayer> excluding) {
-        return AlertType.NORMAL.send(component, excluding);
+        return sendFiltered(AlertType.NORMAL, component, excluding, null);
+    }
+
+    public Set<PlatformPlayer> sendAlert(Component component, @Nullable Set<@Nullable PlatformPlayer> excluding, @Nullable String violatorName) {
+        return sendFiltered(AlertType.NORMAL, component, excluding, violatorName);
+    }
+
+    private final Map<PlatformPlayer, String> alertPlayerFilter = new ConcurrentHashMap<>();
+
+    public void setPlayerFilter(@NotNull PlatformPlayer listener, @Nullable String targetName) {
+        if (targetName == null) {
+            alertPlayerFilter.remove(listener);
+        } else {
+            alertPlayerFilter.put(listener, targetName);
+        }
+    }
+
+    public @Nullable String getPlayerFilter(@NotNull PlatformPlayer listener) {
+        return alertPlayerFilter.get(listener);
+    }
+
+    private Set<PlatformPlayer> sendFiltered(AlertType type, Component component, @Nullable Set<@Nullable PlatformPlayer> excluding, @Nullable String violatorName) {
+        HashSet<PlatformPlayer> listeners = new HashSet<>(type.players);
+        if (excluding != null) {
+            listeners.removeAll(excluding);
+        }
+
+        for (PlatformPlayer platformPlayer : listeners) {
+            String filter = alertPlayerFilter.get(platformPlayer);
+            if (filter != null && violatorName != null && !filter.equalsIgnoreCase(violatorName)) continue;
+            platformPlayer.sendMessage(component);
+        }
+
+        if (type.console && (excluding == null || !excluding.contains(null))) {
+            platformServer.getConsoleSender().sendMessage(component);
+            listeners.add(null);
+        }
+
+        return listeners;
     }
 
     @Contract(pure = true)
