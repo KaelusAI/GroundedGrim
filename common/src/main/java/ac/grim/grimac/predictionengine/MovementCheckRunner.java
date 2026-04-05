@@ -436,6 +436,18 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         if (player.isFlying != player.wasFlying)
             player.uncertaintyHandler.lastFlyingStatusChange.reset();
 
+        if (player.isGliding != player.wasGliding) {
+            player.uncertaintyHandler.lastGlidingChange.reset();
+            double vel = player.clientVelocity.length();
+            int fw = player.fireworks.getMaxFireworksAppliedPossible();
+            double estimated = vel;
+            for (int i = 0; i < fw; i++) {
+                estimated = estimated * 0.5 + 0.85;
+            }
+            player.uncertaintyHandler.lastGlidingVelocity = Math.max(vel, estimated);
+            player.uncertaintyHandler.lastGlidingFireworks = fw;
+        }
+
         if (!player.inVehicle() && (Math.abs(player.x) == 2.9999999E7D || Math.abs(player.z) == 2.9999999E7D)) {
             player.uncertaintyHandler.lastThirtyMillionHardBorder.reset();
         }
@@ -576,19 +588,7 @@ public class MovementCheckRunner extends Check implements PositionCheck {
         if (offset > 0) {
             int chunkX = (int) Math.floor(player.x) >> 4;
             int chunkZ = (int) Math.floor(player.z) >> 4;
-            int lastChunkX = (int) Math.floor(player.lastX) >> 4;
-            int lastChunkZ = (int) Math.floor(player.lastZ) >> 4;
-            int bbMinChunkX = (int) Math.floor(player.boundingBox.minX) >> 4;
-            int bbMaxChunkX = (int) Math.floor(player.boundingBox.maxX) >> 4;
-            int bbMinChunkZ = (int) Math.floor(player.boundingBox.minZ) >> 4;
-            int bbMaxChunkZ = (int) Math.floor(player.boundingBox.maxZ) >> 4;
-
-            if (!player.compensatedWorld.isChunkLoaded(chunkX, chunkZ)
-                    || !player.compensatedWorld.isChunkLoaded(lastChunkX, lastChunkZ)
-                    || !player.compensatedWorld.isChunkLoaded(bbMinChunkX, bbMinChunkZ)
-                    || !player.compensatedWorld.isChunkLoaded(bbMaxChunkX, bbMaxChunkZ)
-                    || !player.compensatedWorld.isChunkLoaded(bbMinChunkX, bbMaxChunkZ)
-                    || !player.compensatedWorld.isChunkLoaded(bbMaxChunkX, bbMinChunkZ)) {
+            if (!player.compensatedWorld.isChunkLoaded(chunkX, chunkZ)) {
                 offset = 0;
             }
         }
