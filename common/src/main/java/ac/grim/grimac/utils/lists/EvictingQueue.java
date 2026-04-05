@@ -26,4 +26,8 @@ public class EvictingQueue<K> extends ArrayList<K> {
     public K getOldest() {
         return get(0);
     }
+
+    public int getMaxSize() {
+        return maxSize;
+    }
 }
