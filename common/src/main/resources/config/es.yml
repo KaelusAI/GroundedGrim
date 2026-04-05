@@ -203,6 +203,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -328,6 +330,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -341,20 +345,22 @@ Reach:
     # debido a cambios en el protocolo y limitaciones. Esta comprobación es más poderosa en clientes 1.7 y 1.8
     # conectados a un servidor 1.8
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Distancia de alcance adicional (bloques) agregada en la parte superior del umbral.
+    # A diferencia del umbral (que expande la hitbox), esto extiende solo la distancia de alcance permitida,
+    # sin afectar la comprobación de intersección de rayos de Hitboxes.
+    # Aumenta si Reach genera falsos positivos debido a lag/interpolación. 0.0 = predeterminado (estricto).
     extra-expansion: 0.0
     # ¿Deberíamos cancelar golpes que sabemos que son imposibles?
     # Golpes de 3.00-3.03 puede que aun asi pasen, pero se marcaran debido a limitaciones del orden de paquetes.
     block-impossible-hits: true
-    # Esto mandará un paquete adicional al final de cada tick para aumentar las chances de encontrar trampas
-    # Esto se inyecta en la lista de conexiones del servidor para mandar un paquete final justo antes de que el servidor haga "flush".
-    # Habilitar esto causará que el uso de banda ancha de todos los jugadores aumente
-    # Esto no disminuirá el rendimiento del servidor.
-    # Habilitar esto ayudará a encontrar más jugadores haciendo trampa.
-    # Dejar esto deshabilitado también encontrara a jugadores haciendo trampa y no causara falsos positivos.
-    # Excepto que seas un servidor 1.8 enfocado en el PvP, este paquete adicional no es recomendado.
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     allow-sprint-jumping-when-using-elytra: true
@@ -365,8 +371,13 @@ exploit:
 # Habilitar el registro de plugins que se han inyectado a netty para intentar resolver problemas de compatibilidad.
 debug-pipeline-on-join: false
 
-# Habilitar comprobaciones experimentales
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

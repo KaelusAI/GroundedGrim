@@ -199,6 +199,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -324,6 +326,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -336,20 +340,22 @@ Reach:
     # Il y a un agrandissement forcé de 0,03 avec les versions 1.9 à 1.18.1 (pas 1.18.2) ou certaines combinaisons client/serveur en raison
     # des changements et limitations du protocole. Cette vérification est particulièrement puissante avec les clients 1.7/1.8 sur les serveurs 1.8.
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Distance de portée supplémentaire (blocs) ajoutée au-dessus du seuil.
+    # Contrairement au seuil (qui agrandit la hitbox), cela ne prolonge que la distance de portée autorisée,
+    # sans affecter la vérification d'intersection de rayons des hitboxes.
+    # Augmentez si Reach génère des faux positifs en raison du lag/interpolation. 0.0 = par défaut (strict).
     extra-expansion: 0.0
     # Devons-nous annuler les coups que nous savons impossibles ?
     # Les coups entre 3,00 et 3,03 peuvent passer mais seront quand même signalés en raison des limitations de l'ordre des paquets.
     block-impossible-hits: true
-    # Cela enverra un paquet supplémentaire à la fin de chaque tick pour augmenter les chances de détecter les triches.
-    # Cela s'injecte dans la liste de connexions du serveur pour envoyer un dernier paquet juste avant que le serveur ne le vide.
-    # Activer cette fonctionnalité augmentera l'utilisation de la bande passante pour tous les joueurs.
-    # Cela n'entraînera pas de diminution des performances globales du serveur.
-    # Activer cette fonctionnalité permettra de détecter davantage de tricheurs.
-    # Laisser cette fonctionnalité désactivée permettra tout de même de détecter les tricheurs et n'entraînera pas de faux positifs.
-    # À moins d'être un serveur axé sur le PvP en 1.8, l'envoi de ce paquet supplémentaire n'est pas recommandé.
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     allow-sprint-jumping-when-using-elytra: true
@@ -360,8 +366,13 @@ exploit:
 # Activer l'enregistrement des plugins ayant injecté dans Netty lors de la connexion pour déboguer les problèmes de compatibilité
 debug-pipeline-on-join: false
 
-# Active les vérifications expérimentales
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

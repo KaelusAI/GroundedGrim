@@ -234,6 +234,8 @@ AutoTotem:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -359,6 +361,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -375,20 +379,22 @@ Reach:
     # There is 0.03 forced expansion with 1.9-1.18.1 (not 1.18.2), or some client/server combinations due to
     # protocol changes and limitations. This check is most powerful with 1.7/1.8 clients on 1.8 servers.
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
+    # Extra reach distance (blocks) added on top of threshold.
+    # Unlike threshold (which expands the hitbox), this extends the allowed reach distance only,
+    # without affecting the Hitboxes ray intersection check.
     # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
     extra-expansion: 0.0
     # Should we cancel hits that we know are impossible?
     # 3.00-3.03 hits may go through but still be flagged, due to packet order limitations
     block-impossible-hits: true
-    # This will send an additional packet at the end of every tick to increase the likelihood of catching cheats
-    # This injects into server's connection list to send a final packet just before the server flushes
-    # Enabling this will increase bandwidth usage for all players
-    # This will not decrease overall server performance
-    # Enabling this will catch more cheaters.
-    # Leaving this disabled will still catch cheaters and will not cause false positives
-    # Unless you are a 1.8 PvP focused server, this additional packet is not recommended
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # You can gain high speeds when sprint jumping with an elytra, this prevents the exploit when set to false
@@ -404,8 +410,13 @@ exploit:
 # Enable logging plugins who have injected into netty on join to debug compatibility issues
 debug-pipeline-on-join: false
 
-# Enables experimental checks
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

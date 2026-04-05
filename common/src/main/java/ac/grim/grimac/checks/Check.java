@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying.isFlying;
@@ -33,6 +35,7 @@ public class Check extends GrimProcessor implements AbstractCheck {
     private String description;
 
     private boolean experimental;
+    private boolean experimentalOverride;
     private @Setter boolean isEnabled;
 
     private boolean exemptPermission;
@@ -93,7 +96,7 @@ public class Check extends GrimProcessor implements AbstractCheck {
     }
 
     public final boolean flag(String verbose) {
-        if (player.disableGrim || (experimental && !player.isExperimentalChecks()) || exemptPermission)
+        if (player.disableGrim || (experimental && !player.isExperimentalChecks() && !experimentalOverride) || exemptPermission)
             return false; // Avoid calling event if disabled
 
         FlagEvent event = new FlagEvent(player, this, verbose);
@@ -140,6 +143,12 @@ public class Check extends GrimProcessor implements AbstractCheck {
         setbackVL = configuration.getDoubleElse(configName + ".setbackvl", setbackVL);
         displayName = configuration.getStringElse(configName + ".displayname", checkName);
         description = configuration.getStringElse(configName + ".description", description);
+
+        if (experimental) {
+            List<String> enabledList = configuration.getStringListElse("enabled-experimental-checks", new ArrayList<>());
+            experimentalOverride = enabledList.stream()
+                    .anyMatch(s -> s.equalsIgnoreCase(checkName) || s.equalsIgnoreCase(configName));
+        }
 
         if (setbackVL == -1) setbackVL = Double.MAX_VALUE;
         onReload(configuration);

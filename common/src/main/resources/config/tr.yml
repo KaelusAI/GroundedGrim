@@ -198,6 +198,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -323,6 +325,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -335,20 +339,22 @@ Reach:
     # 1.9-1.18.1 (1.18.2 değil) ile zorunlu olarak 0.03 genişletme vardır veya bazı istemci/sunucu kombinasyonları nedeniyle
     # protokol değişiklikleri ve sınırlamaları nedeniyle. Bu kontrol, 1.7/1.8 istemcilerle 1.8 sunucularda en güçlüdür.
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # Eşik üzerine eklenen ekstra menzil mesafesi (bloklar).
+    # Eşiğin aksine (hitbox'ı genişleten), bu yalnızca izin verilen menzil mesafesini genişletir,
+    # Hitboxes ışın kesişim kontrolünü etkilemez.
+    # Lag/interpolasyon nedeniyle Reach yanlış pozitifleri verir. 0.0 = varsayılan (katı).
     extra-expansion: 0.0
     # İmkansız olduğunu bildiğimiz vuruşları iptal etmeli miyiz?
     # Paket sırası sınırlamaları nedeniyle 3.00-3.03 arası vuruşlar gerçekleşebilir, ancak yine de işaretlenebilir
     block-impossible-hits: true
-    # Bu, hileleri yakalama olasılığını artırmak için her tikin sonunda ek bir paket gönderecektir
-    # Bu, sunucunun bağlantı listesine enjekte edilerek sunucu boşaltmadan hemen önce son bir paket göndermek için yapılır
-    # Bunu etkinleştirmek, tüm oyuncular için bant genişliği kullanımını artıracaktır
-    # Bu, genel sunucu performansını düşürmez
-    # Bunu etkinleştirmek, daha fazla hilecinin yakalanmasını sağlar
-    # Bu özellik devre dışı bırakılsa bile hileciler yakalanır ve yanlış pozitifler oluşmaz
-    # 1.8 PvP odaklı bir sunucu değilseniz, bu ek paket önerilmez
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # Elytra ile sprint zıplarken yüksek hızlar kazanabilirsiniz, bu ayar false olarak ayarlandığında bu istismarı önler
@@ -364,8 +370,13 @@ exploit:
 # Netty'ye enjekte olan eklentileri giriş sırasında günlüklemeyi etkinleştirerek uyumluluk sorunlarını gider
 debug-pipeline-on-join: false
 
-# Deneysel kontrolleri etkinleştir
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

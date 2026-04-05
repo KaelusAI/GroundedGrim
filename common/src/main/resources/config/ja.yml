@@ -203,6 +203,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -328,6 +330,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -341,19 +345,22 @@ Reach:
     # 一部のクライアント/サーバーの組み合わせでは、強制的に0.03の拡大が適用される場合があります。
     # このチェックは1.7/1.8クライアントが1.8サーバーに接続した際に最も効果的です。
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
+    # しきい値の上に追加される追加のリーチ距離（ブロック）。
+    # しきい値（ヒットボックスを拡張する）とは異なり、これは許可されたリーチ距離のみを拡張し、
+    # ヒットボックスのレイ交差点チェックには影響しません。
+    # ラグ/補間によるリーチの誤検知が発生する場合は増加してください。 0.0 = デフォルト（厳密）。
     extra-expansion: 0.0
     # 不可能なヒット（距離的に届かない攻撃）をキャンセルするか
     # 3.00〜3.03のリーチによるヒットが通る場合がありますが、パケット順序の制限によりフラグが立つこともあります
     block-impossible-hits: true
-    # チート検出の可能性を高めるため、各ティックの終わりに追加のパケットを送信します
-    # これはサーバーの接続リストに挿入され、サーバーがフラッシュする直前に送信されます
-    # 有効にすると全プレイヤーの帯域幅使用量が増加しますが、サーバーのパフォーマンスは低下しません
-    # 有効にすることでさらに多くのチーターを検出できますが、
-    # 無効のままでもチーターを検出でき、誤検知も発生しません
-    # PvP特化の1.8サーバーでない限り、この追加パケットの有効化は推奨されません
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
 
 exploit:
     # エリトラでダッシュジャンプを行うと非常に高い速度を得られるエクスプロイト（意図しない挙動）があります。
@@ -373,8 +380,13 @@ exploit:
 # Nettyに参加時にプラグインが注入された場合の互換性問題をデバッグするためにログを有効にします
 debug-pipeline-on-join: false
 
-# 実験的なチェックを有効にします
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true

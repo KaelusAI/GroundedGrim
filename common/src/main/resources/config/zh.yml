@@ -220,6 +220,8 @@ Trigger:
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through blocks
     setbackvl: 20
     # Blocks to ignore when checking for wall hits
@@ -345,6 +347,8 @@ WallHit:
 EntityPierce:
     # Enable detection of hitting through other entities
     enabled: true
+    # Only check hits against players
+    only-players: false
     # Setback VL for hitting through other entities
     setbackvl: 30
 
@@ -353,17 +357,26 @@ Hitboxes:
 
 Reach:
     threshold: 0.0005
-    # Extra hitbox expansion (blocks) for reach distance checks.
-    # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
-    extra-expansion: 0.0
     # 我们应该将实体碰撞箱扩大多少？ 0.0005 应该检测到 3.0005+ reach
     #
     # 在 1.9-1.18.1（不是 1.18.2）或某些客户端/服务器组合中存在 0.03 距离的增加，因为
     # 协议更改和限制。 对于 1.8 服务器上的 1.7/1.8 客户端，此检查功能最为强大。
+    # 在阈值基础上添加的额外伸手距离（块数）。
+    # 与阈值（扩大命中框）不同，这只扩大允许的伸手距离，
+    # 不影响 Hitboxes 光线交点检查。
+    # 如果 Reach 因延迟/插值而产生误报，请增加此值。 0.0 = 默认（严格）。
+    extra-expansion: 0.0
     block-impossible-hits: true
     # 我们应该取消不合法的攻击吗？
     # 攻击距离为3.00-3.03可能不会被取消，但仍会被作弊标记，因为有数据包顺序限制
-    enable-post-packet: false
+    # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
+    # Injects into server's connection list to send a final packet just before the server flushes.
+    # Increases bandwidth usage for all players but does not decrease overall server performance.
+    # Automatically disabled on 1.8 servers unless force-enable-post-packet is true.
+    # Default: true (enabled on 1.9+ servers)
+    enable-post-packet: true
+    # Force enable post-packet even on 1.8 servers where it is auto-disabled.
+    force-enable-post-packet: false
     # 这将在每个游戏刻（tick）结束时发送一个额外的数据包，以检查更多的作弊
     # 这会注入服务器的连接列表以在服务器刷新之前发送最终数据
     # 启用这将增加所有玩家的带宽占用
@@ -384,8 +397,13 @@ exploit:
 # 启用在加入时注入 netty 的日志插件以调试兼容性问题
 debug-pipeline-on-join: false
 
-# 启用实验性检查
+# Enables all experimental checks
 experimental-checks: false
+
+# Enable specific experimental checks individually when experimental-checks is false.
+# When experimental-checks is true, all experimental checks are enabled and this list is ignored.
+# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
+enabled-experimental-checks: []
 
 # 取消有问题的格挡
 reset-item-usage-on-item-update: true
