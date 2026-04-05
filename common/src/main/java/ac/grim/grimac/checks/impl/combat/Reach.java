@@ -81,6 +81,7 @@ public class Reach extends Check implements PacketCheck {
     private boolean entityPierceOnlyPlayers;
     public double threshold;
     private double hitboxExtraExpansion;
+    private double reachExtraExpansion;
     private Set<String> wallHitIgnoredBlocks = new HashSet<>();
     private final java.util.HashMap<Integer, Double> cancelBuffers = new java.util.HashMap<>();
 
@@ -406,7 +407,7 @@ public class Reach extends Check implements PacketCheck {
 
         targetBox.expand(hitboxMargin);
 
-        return maxReach;
+        return maxReach + reachExtraExpansion;
     }
 
     @Override
@@ -418,6 +419,7 @@ public class Reach extends Check implements PacketCheck {
         this.entityPierceOnlyPlayers = config.getBooleanElse("EntityPierce.only-players", false);
         this.wallHitIgnoredBlocks = new HashSet<>(config.getStringListElse("WallHit.ignored-blocks", new ArrayList<>()));
         this.threshold = config.getDoubleElse("Reach.threshold", 0.0005);
+        this.reachExtraExpansion = config.getDoubleElse("Reach.extra-expansion", 0.0);
         this.hitboxExtraExpansion = config.getDoubleElse("Hitboxes.extra-expansion", 0.0);
     }
 
