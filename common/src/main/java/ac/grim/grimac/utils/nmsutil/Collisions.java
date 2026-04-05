@@ -13,6 +13,7 @@ import ac.grim.grimac.utils.collisions.CollisionData;
 import ac.grim.grimac.utils.collisions.datatypes.CollisionBox;
 import ac.grim.grimac.utils.collisions.datatypes.SimpleCollisionBox;
 import ac.grim.grimac.utils.data.Pair;
+import ac.grim.grimac.utils.data.ShulkerData;
 import ac.grim.grimac.utils.data.VectorData;
 import ac.grim.grimac.utils.data.tags.SyncedTags;
 import ac.grim.grimac.utils.latency.CompensatedWorld;
@@ -25,6 +26,7 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.protocol.world.Direction;
 import com.github.retrooper.packetevents.protocol.world.chunk.BaseChunk;
+import com.github.retrooper.packetevents.protocol.world.BlockFace;
 import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
 import com.github.retrooper.packetevents.protocol.world.states.defaulttags.BlockTags;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
@@ -327,8 +329,12 @@ public final class Collisions {
                             final StateType type = data.getType();
                             if (edgeCount != 3 && (edgeCount != 1 || Materials.isShapeExceedsCube(type))
                                     && (edgeCount != 2 || type == StateTypes.PISTON_HEAD)) {
-                                final CollisionBox collisionBox = CollisionData.getData(type).getMovementCollisionBox(player, player.getClientVersion(), data, x, y, z);
-                                // Don't add to a list if we only care if the player intersects with the block
+                                CollisionBox collisionBox;
+                                if (BlockTags.SHULKER_BOXES.contains(type)) {
+                                    collisionBox = getShulkerDynamicCollision(player, data, x, y, z);
+                                } else {
+                                    collisionBox = CollisionData.getData(type).getMovementCollisionBox(player, player.getClientVersion(), data, x, y, z);
+                                }
                                 if (!onlyCheckCollide) {
                                     collisionBox.downCast(listOfBlocks);
                                 } else if (collisionBox.isCollided(wantedBB)) {
@@ -342,6 +348,18 @@ public final class Collisions {
         }
 
         return false;
+    }
+
+    private static CollisionBox getShulkerDynamicCollision(GrimPlayer player, WrappedBlockState data, int x, int y, int z) {
+        Vector3i pos = new Vector3i(x, y, z);
+        for (ShulkerData shulker : player.compensatedWorld.openShulkerBoxes) {
+            if (pos.equals(shulker.blockPos) && !shulker.isClosing) {
+                BlockFace facing = data.getFacing();
+                if (facing == null) facing = BlockFace.UP;
+                return shulker.getDynamicCollision(facing);
+            }
+        }
+        return new SimpleCollisionBox(x, y, z, x + 1, y + 1, z + 1, true);
     }
 
     public static Vector3dm collideBoundingBoxLegacy(Vector3dm toCollide, SimpleCollisionBox

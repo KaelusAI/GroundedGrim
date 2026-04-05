@@ -611,8 +611,14 @@ public class PredictionEngine {
             bonusY += scaledTolerance;
         }
 
-        if ((player.wasGliding && !player.isGliding)
-                || (player.isGliding && (player.onGround || player.lastOnGround || player.verticalCollision))) {
+        if (player.uncertaintyHandler.lastGlidingChange.hasOccurredSince(5)) {
+            double vel = player.uncertaintyHandler.lastGlidingVelocity;
+            int ticksSince = player.uncertaintyHandler.lastGlidingChange.getTicksSince();
+            double decay = Math.pow(0.8, ticksSince);
+            double transitionBonus = Math.min(vel * 0.65 * decay, 1.5);
+            additionHorizontal += transitionBonus;
+            bonusY += Math.min(0.5 * decay, transitionBonus);
+        } else if (player.isGliding && (player.onGround || player.lastOnGround || player.verticalCollision)) {
             double transitionBonus = Math.min(0.25, player.clientVelocity.length() * 0.10);
             additionHorizontal += transitionBonus;
             bonusY += 0.25;
@@ -791,6 +797,8 @@ public class PredictionEngine {
             box.expand(0.3, 0.1, 0.3);
         }
 
+
+
         // Handle missing a tick with friction in vehicles
         // TODO: Attempt to fix mojang's netcode here
         if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(1)) {
@@ -828,6 +836,12 @@ public class PredictionEngine {
             minVector.setZ(Math.min(minVector.getZ() - pistonZ, pistonZ));
             maxVector.setZ(Math.max(maxVector.getZ() + pistonZ, pistonZ));
         }
+
+        if (!isElytraFlight && player.uncertaintyHandler.lastShulkerBoxNearby.hasOccurredSince(3)
+                && !hardEntityNearby) {
+            maxVector.setY(Math.min(maxVector.getY(), 0.55));
+        }
+
         return VectorUtils.cutBoxToVector(targetVec, minVector, maxVector);
     }
 

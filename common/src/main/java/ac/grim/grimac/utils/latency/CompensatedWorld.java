@@ -380,6 +380,7 @@ public class CompensatedWorld implements PacketWorld {
         }
 
         for (ShulkerData data : openShulkerBoxes) {
+            data.tick();
             SimpleCollisionBox shulkerCollision = data.getCollision();
 
             BlockFace direction;
@@ -390,18 +391,11 @@ public class CompensatedWorld implements PacketWorld {
                 direction = ((PacketEntityShulker) data.entity).facing.getOppositeFace();
             }
 
-            if (direction == null) direction = BlockFace.UP; // default state
+            if (direction == null) direction = BlockFace.UP;
 
-            // Change negative corner in expansion as the direction is negative
-            // We don't bother differentiating shulker entities and shulker boxes
-            // I guess players can cheat to get an extra 0.49 of Y height on shulker boxes, I don't care.
-            if (direction.getModX() == -1 || direction.getModY() == -1 || direction.getModZ() == -1) {
-                shulkerCollision.expandMin(direction.getModX(), direction.getModY(), direction.getModZ());
-            } else {
-                shulkerCollision.expandMax(direction.getModZ(), direction.getModY(), direction.getModZ());
-            }
+            SimpleCollisionBox dynamicBox = data.getDynamicCollision(direction);
 
-            if (playerBox.isCollided(shulkerCollision)) {
+            if (playerBox.isCollided(dynamicBox)) {
                 modX = Math.max(modX, Math.abs(direction.getModX() * 0.51D));
                 modY = Math.max(modY, Math.abs(direction.getModY() * 0.51D));
                 modZ = Math.max(modZ, Math.abs(direction.getModZ() * 0.51D));

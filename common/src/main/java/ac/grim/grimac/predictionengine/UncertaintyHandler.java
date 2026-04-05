@@ -90,6 +90,10 @@ public class UncertaintyHandler {
     public final LastInstance lastStuckWest;
     public final LastInstance lastStuckEast;
     public final LastInstance lastVehicleSwitch;
+    public final LastInstance lastGlidingChange;
+    public final LastInstance lastShulkerBoxNearby;
+    public double lastGlidingVelocity = 0;
+    public int lastGlidingFireworks = 0;
     public double lastHorizontalOffset = 0;
     public double lastVerticalOffset = 0;
 
@@ -109,6 +113,8 @@ public class UncertaintyHandler {
         this.lastStuckWest = new LastInstance(player);
         this.lastStuckEast = new LastInstance(player);
         this.lastVehicleSwitch = new LastInstance(player);
+        this.lastGlidingChange = new LastInstance(player);
+        this.lastShulkerBoxNearby = new LastInstance(player);
         tick();
 
         this.riptideEntities.add(0);
@@ -179,17 +185,24 @@ public class UncertaintyHandler {
         Vector3dm currentLook = ReachUtils.getLook(player, player.yaw, player.pitch);
         Vector3dm lastLook = ReachUtils.getLook(player, player.lastYaw, player.lastPitch);
 
-        double residualX = Math.min(fireworkResidualCap, Math.max(0.01,
-            0.5 * Math.abs(currentLook.getX() - lastLook.getX()) * 0.85 * maxFireworks));
-        double residualY = Math.min(fireworkResidualCap, Math.max(0.01,
-            0.5 * Math.abs(currentLook.getY() - lastLook.getY()) * 0.85 * maxFireworks));
-        double residualZ = Math.min(fireworkResidualCap, Math.max(0.01,
-            0.5 * Math.abs(currentLook.getZ() - lastLook.getZ()) * 0.85 * maxFireworks));
-
-        fireworksBox = new SimpleCollisionBox(
-            -residualX, -residualY, -residualZ,
-             residualX,  residualY,  residualZ
-        );
+        if (player.wasTouchingWater) {
+            double totalBoost = 0.85 * maxFireworks;
+            fireworksBox = new SimpleCollisionBox(
+                -totalBoost, -totalBoost, -totalBoost,
+                 totalBoost,  totalBoost,  totalBoost
+            );
+        } else {
+            double residualX = Math.min(fireworkResidualCap, Math.max(0.01,
+                0.5 * Math.abs(currentLook.getX() - lastLook.getX()) * 0.85 * maxFireworks));
+            double residualY = Math.min(fireworkResidualCap, Math.max(0.01,
+                0.5 * Math.abs(currentLook.getY() - lastLook.getY()) * 0.85 * maxFireworks));
+            double residualZ = Math.min(fireworkResidualCap, Math.max(0.01,
+                0.5 * Math.abs(currentLook.getZ() - lastLook.getZ()) * 0.85 * maxFireworks));
+            fireworksBox = new SimpleCollisionBox(
+                -residualX, -residualY, -residualZ,
+                 residualX,  residualY,  residualZ
+            );
+        }
     }
 
     public double getOffsetHorizontal(VectorData data) {
@@ -283,6 +296,11 @@ public class UncertaintyHandler {
             offset -= isElytraFlight ? 0.3 : 1.2;
         }
 
+        if (player.wasTouchingWater && (player.isGliding || player.wasGliding)
+                && player.fireworks.getMaxFireworksAppliedPossible() > 0) {
+            offset -= 0.05;
+        }
+
         if (player.uncertaintyHandler.isOrWasNearGlitchyBlock) {
             offset -= isElytraFlight ? 0.05 : 0.25;
         }
@@ -309,13 +327,12 @@ public class UncertaintyHandler {
     public void checkForHardCollision() {
         // Look for boats the player could collide with
         if (hasHardCollision()) player.uncertaintyHandler.lastHardCollidingLerpingEntity.reset();
+        if (isSteppingNearShulker) player.uncertaintyHandler.lastShulkerBoxNearby.reset();
     }
 
     private boolean hasHardCollision() {
-        // This bounding box can be infinitely large without crashing the server.
-        // This works by the proof that if you collide with an object, you will stop near the object
         SimpleCollisionBox expandedBB = player.boundingBox.copy().expand(1);
-        return isSteppingNearShulker || regularHardCollision(expandedBB) || striderCollision(expandedBB) || boatCollision(expandedBB);
+        return regularHardCollision(expandedBB) || striderCollision(expandedBB) || boatCollision(expandedBB);
     }
 
     private boolean regularHardCollision(SimpleCollisionBox expandedBB) {
