@@ -1,5 +1,7 @@
 /**
- *          GrimAC Build Configuration
+ *          GroundedGrim Build Configuration
+ *          Fork of GrimAC by KaelusMC
+ *          https://github.com/KaelusMC/GroundedGrim
  *
  * Build Flags:
  * -PshadePE=true   - Enables 'lite' mode
@@ -17,13 +19,13 @@ BuildConfig.init(project)
 val baseVersion = "2.3.74"
 group = "ac.grim.grimac"
 version = VersionUtil.computeVersion(baseVersion)
-description = "Libre simulation anticheat designed for 1.21 with 1.8–1.21 support, powered by PacketEvents 2.0."
+description = "GroundedGrim - fork of GrimAC by KaelusMC. Simulation anticheat for 1.8-1.21, powered by PacketEvents 2.0."
 
 ext["timestamp"] = System.currentTimeMillis().toString()
 ext["git_branch"] = VersionUtil.getGitBranch(true)
 ext["git_commit"] = VersionUtil.getGitCommitHash(true)
 ext["git_org"] = System.getenv("GRIM_GIT_ORG") ?: VersionUtil.getGitUser()
-ext["git_repo"] = System.getenv("GRIM_GIT_REPO") ?: "Grim"
+ext["git_repo"] = System.getenv("GRIM_GIT_REPO") ?: "GroundedGrim"
 
 println("Build configuration:")
 println("    shadePE            = ${BuildConfig.shadePE}")
