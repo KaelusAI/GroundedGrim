@@ -206,6 +206,31 @@ Trigger:
         sample-size: 10
         max-spread: 50
 
+AirStuck:
+    # Enable AirStuck detection (teleports frozen players to ground)
+    # Disable if you don't want lagging players to be teleported
+    enabled: true
+    # Ticks without position packet before flagging (20 ticks = 1 second)
+    max-ticks: 40
+
+AutoTotem:
+    a:
+        # Maximum time (ms) between totem pop and re-equip to flag
+        # Human reaction is 200-3000ms, sub-100ms is physically impossible
+        threshold: 100
+        debug: false
+    b:
+        # Minimum samples before statistical analysis
+        min-samples: 3
+        # Maximum standard deviation (ms) of re-equip intervals to flag
+        # Bots have SD < 15ms, humans have SD > 100ms
+        max-sd: 50.0
+        # Maximum mean (ms) of re-equip intervals to flag
+        max-mean: 500
+        debug: false
+    c:
+        debug: false
+
 WallHit:
     # Enable detection of hitting through blocks (doors, trapdoors, etc.)
     enabled: true

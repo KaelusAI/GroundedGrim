@@ -155,6 +155,23 @@ Punishments:
       - "1:1 [log]"
       - "5:0 [webhook]"
       - "30:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
+  AutoTotemKick:
+    remove-violations-after: 300
+    checks:
+      - "AutoTotem"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "3:0 [webhook]"
+      - "10:0 kick %player% [GroundedGrim] AutoTotem (%check_name%)"
+  AirStuck:
+    remove-violations-after: 300
+    checks:
+      - "AirStuck"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "3:0 [webhook]"
   InventoryKick:
     remove-violations-after: 300
     checks:
