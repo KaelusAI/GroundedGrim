@@ -4,8 +4,11 @@ import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.command.BuildableCommand;
 import ac.grim.grimac.platform.api.manager.cloud.CloudCommandAdapter;
 import ac.grim.grimac.platform.api.sender.Sender;
+import ac.grim.grimac.utils.anticheat.MessageUtil;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.description.Description;
+import org.incendo.cloud.parser.standard.StringParser;
 import org.jetbrains.annotations.NotNull;
 
 public class GrimVerbose implements BuildableCommand {
@@ -13,16 +16,31 @@ public class GrimVerbose implements BuildableCommand {
     public void register(CommandManager<Sender> commandManager, CloudCommandAdapter adapter) {
         commandManager.command(
                 commandManager.commandBuilder("grim", "grimac")
-                        .literal("verbose")
+                        .literal("verbose", Description.of("Toggle verbose"))
                         .permission("grim.verbose")
+                        .optional("player", StringParser.stringParser(), adapter.onlinePlayerSuggestions())
                         .handler(this::handleVerbose)
         );
     }
 
     private void handleVerbose(@NotNull CommandContext<Sender> context) {
         Sender sender = context.sender();
+        String targetFilter = context.getOrDefault("player", null);
+
         if (sender.isPlayer()) {
-            GrimAPI.INSTANCE.getAlertManager().toggleVerbose(context.sender().getPlatformPlayer(), false);
+            GrimAPI.INSTANCE.getAlertManager().toggleVerbose(sender.getPlatformPlayer(), false);
+
+            if (GrimAPI.INSTANCE.getAlertManager().hasVerboseEnabled(sender.getPlatformPlayer())) {
+                GrimAPI.INSTANCE.getAlertManager().setPlayerFilter(sender.getPlatformPlayer(), targetFilter);
+                if (targetFilter != null) {
+                    String msg = GrimAPI.INSTANCE.getConfigManager().getConfig()
+                            .getStringElse("verbose-filter", "%prefix% &fFiltering verbose for: &b%player%")
+                            .replace("%player%", targetFilter);
+                    sender.sendMessage(MessageUtil.miniMessage(MessageUtil.replacePlaceholders(sender, msg)));
+                }
+            } else {
+                GrimAPI.INSTANCE.getAlertManager().setPlayerFilter(sender.getPlatformPlayer(), null);
+            }
         } else if (sender.isConsole()) {
             GrimAPI.INSTANCE.getAlertManager().toggleConsoleVerbose();
         }

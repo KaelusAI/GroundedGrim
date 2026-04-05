@@ -125,7 +125,7 @@ public class PunishmentManager implements ConfigReloadable {
                     if (GrimAPI.INSTANCE.getAlertManager().hasVerboseListeners() && command.command.equals("[alert]")) {
                         sentDebug = true;
                         Component component = MessageUtil.miniMessage(cmd);
-                        verboseListeners = GrimAPI.INSTANCE.getAlertManager().sendVerbose(component, null);
+                        verboseListeners = GrimAPI.INSTANCE.getAlertManager().sendVerbose(component, null, player.user.getName());
                     }
 
                     if (violationCount >= command.threshold) {
@@ -153,7 +153,7 @@ public class PunishmentManager implements ConfigReloadable {
                                             player.sendMessage(message);
                                         }
                                     } else {
-                                        GrimAPI.INSTANCE.getAlertManager().sendAlert(message, verboseListeners);
+                                        GrimAPI.INSTANCE.getAlertManager().sendAlert(message, verboseListeners, player.user.getName());
                                     }
                                 }
                                 default -> GrimAPI.INSTANCE.getScheduler().getGlobalRegionScheduler().run(GrimAPI.INSTANCE.getGrimPlugin(), () ->
