@@ -170,6 +170,7 @@ public class CheckManager {
                 .put(BehaviorE.class, new BehaviorE(player))
                 .put(TriggerA.class, new TriggerA(player))
                 .put(AirStuck.class, new AirStuck(player))
+                .put(ElytraN.class, new ElytraN(player))
                 .put(PacketLogger.class, new PacketLogger(player))
                 .put(SetbackBlocker.class, new SetbackBlocker(player)) // Must be last class otherwise we can't check while blocking packets
                 .build();

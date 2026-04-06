@@ -50,7 +50,16 @@ public class PacketEntityAction extends PacketListenerAbstract {
                 case START_FLYING_WITH_ELYTRA:
                     if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9)) return;
 
-                    if (player.onGround || player.lastOnGround) {
+                    // Block elytra if player hasn't sent position data for 2+ ticks (1.21.2+ only)
+                    // On 1.21.2+ threshold is 0.0002 so position is always sent during any movement
+                    // On 1.9-1.21.1 (canSkipTicks=true) threshold is 0.03 which Slow Falling can undercut
+                    // ViaVersion old clients are covered by ElytraN time-based check instead
+                    boolean noRecentPosition = !player.packetStateData.didLastMovementIncludePosition
+                            && !player.packetStateData.didLastLastMovementIncludePosition
+                            && !player.canSkipTicks()
+                            && !player.getSetbackTeleportUtil().shouldBlockMovement();
+
+                    if (player.onGround || player.lastOnGround || noRecentPosition) {
                         player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
 
                         if (player.platformPlayer != null) {
