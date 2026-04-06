@@ -111,13 +111,21 @@ Punishments:
     checks:
       - "Reach"
       - "Hitboxes"
-      - "WallHit"
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "5:0 [webhook]"
       - "5:0 [proxy]"
       - "40:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
+  WallHit:
+    remove-violations-after: 300
+    checks:
+      - "WallHit"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "5:0 [webhook]"
+      - "5:0 [proxy]"
   NoRotKick:
     remove-violations-after: 300
     checks:
@@ -126,7 +134,7 @@ Punishments:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "1:0 [webhook]"
-      - "3:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
+      - "7:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
   TriggerKick:
     remove-violations-after: 300
     checks:
@@ -297,7 +305,7 @@ Punishments:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "10:0 [webhook]"
-      - "25:0 kick %player% [GroundedGrim] Sprint violation (%check_name%)"
+      - "50:0 kick %player% [GroundedGrim] Sprint violation (%check_name%)"
   Misc:
     remove-violations-after: 300
     checks:
