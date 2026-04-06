@@ -10,8 +10,7 @@ import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
-import com.github.retrooper.packetevents.wrapper.play.client.*;
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerAbilities;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -103,7 +102,7 @@ public class PacketLogger extends Check implements PacketCheck {
         if (!matches(type, true)) return;
         if (WrapperPlayClientPlayerFlying.isFlying(type)) tickCounter++;
 
-        write("C2S", type.getName(), extractC2S(event));
+        write("C2S", type.getName(), PacketDataExtractor.extractC2S(event));
     }
 
     @Override
@@ -114,7 +113,7 @@ public class PacketLogger extends Check implements PacketCheck {
         PacketTypeCommon type = event.getPacketType();
         if (!matches(type, false)) return;
 
-        write("S2C", type.getName(), extractS2C(event));
+        write("S2C", type.getName(), PacketDataExtractor.extractS2C(event));
     }
 
     private synchronized void write(String dir, String packet, String data) {
@@ -137,54 +136,6 @@ public class PacketLogger extends Check implements PacketCheck {
             case ABILITIES -> c2s ? ABILITIES_C2S.contains(type) : ABILITIES_S2C.contains(type);
             default -> true;
         };
-    }
-
-    private String extractC2S(PacketReceiveEvent event) {
-        PacketTypeCommon type = event.getPacketType();
-        if (type == PacketType.Play.Client.PLAYER_POSITION) {
-            var p = new WrapperPlayClientPlayerPosition(event);
-            return pos(p.getLocation().getX(), p.getLocation().getY(), p.getLocation().getZ(), Float.NaN, Float.NaN, p.isOnGround());
-        }
-        if (type == PacketType.Play.Client.PLAYER_ROTATION) {
-            var p = new WrapperPlayClientPlayerRotation(event);
-            return pos(Double.NaN, Double.NaN, Double.NaN, p.getYaw(), p.getPitch(), p.isOnGround());
-        }
-        if (type == PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION) {
-            var p = new WrapperPlayClientPlayerPositionAndRotation(event);
-            return pos(p.getLocation().getX(), p.getLocation().getY(), p.getLocation().getZ(), p.getLocation().getYaw(), p.getLocation().getPitch(), p.isOnGround());
-        }
-        if (type == PacketType.Play.Client.PLAYER_FLYING)
-            return "onGround=" + new WrapperPlayClientPlayerFlying(event).isOnGround();
-        if (type == PacketType.Play.Client.INTERACT_ENTITY) {
-            var p = new WrapperPlayClientInteractEntity(event);
-            return "entityId=" + p.getEntityId() + " action=" + p.getAction();
-        }
-        if (type == PacketType.Play.Client.ANIMATION)
-            return "hand=" + new WrapperPlayClientAnimation(event).getHand();
-        if (type == PacketType.Play.Client.PLAYER_ABILITIES)
-            return "isFlying=" + new WrapperPlayClientPlayerAbilities(event).isFlying();
-        if (type == PacketType.Play.Client.ENTITY_ACTION)
-            return "action=" + new WrapperPlayClientEntityAction(event).getAction();
-        return "";
-    }
-
-    private String extractS2C(PacketSendEvent event) {
-        if (event.getPacketType() == PacketType.Play.Server.PLAYER_ABILITIES) {
-            var p = new WrapperPlayServerPlayerAbilities(event);
-            return "flySpeed=" + p.getFlySpeed() + " isFlying=" + p.isFlying() + " canFly=" + p.isFlightAllowed();
-        }
-        return "";
-    }
-
-    private String pos(double x, double y, double z, float yaw, float pitch, boolean ground) {
-        StringBuilder sb = new StringBuilder();
-        if (!Double.isNaN(x)) sb.append("x=").append(String.format("%.4f", x)).append(' ');
-        if (!Double.isNaN(y)) sb.append("y=").append(String.format("%.4f", y)).append(' ');
-        if (!Double.isNaN(z)) sb.append("z=").append(String.format("%.4f", z)).append(' ');
-        if (!Float.isNaN(yaw)) sb.append("yaw=").append(String.format("%.2f", yaw)).append(' ');
-        if (!Float.isNaN(pitch)) sb.append("pitch=").append(String.format("%.2f", pitch)).append(' ');
-        sb.append("onGround=").append(ground);
-        return sb.toString();
     }
 
     private void checkTimeout() {
