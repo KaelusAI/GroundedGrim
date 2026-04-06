@@ -331,7 +331,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # O ile powinniśmy zwiększyć hitboxy? 0.0005 powinno wykrywać zasięg 3.0005+.
@@ -343,7 +343,7 @@ Reach:
     # W przeciwieństwie do progu (który rozszerza hitbox), to rozszerza tylko dozwoloną odległość zasięgu,
     # bez wpływu na kontrolę przecięcia promieni hitboxów.
     # Zwiększ, jeśli Reach powoduje fałszywe alarmy z powodu lag/interpolacji. 0.0 = domyślne (rygorystyczne).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Czy powinniśmy anulować trafienia, które wiemy, że są niemożliwe?
     # Trafienia w przedziale 3.00-3.03 mogą przejść, ale nadal będą wykrywane z powodu ograniczeń kolejności pakietów.
     block-impossible-hits: true

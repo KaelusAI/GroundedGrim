@@ -331,7 +331,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Hitbox'ları ne kadar genişletmeliyiz? 0.0005, 3.0005+ menzili tespit etmelidir
@@ -343,7 +343,7 @@ Reach:
     # Eşiğin aksine (hitbox'ı genişleten), bu yalnızca izin verilen menzil mesafesini genişletir,
     # Hitboxes ışın kesişim kontrolünü etkilemez.
     # Lag/interpolasyon nedeniyle Reach yanlış pozitifleri verir. 0.0 = varsayılan (katı).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # İmkansız olduğunu bildiğimiz vuruşları iptal etmeli miyiz?
     # Paket sırası sınırlamaları nedeniyle 3.00-3.03 arası vuruşlar gerçekleşebilir, ancak yine de işaretlenebilir
     block-impossible-hits: true

@@ -50,15 +50,6 @@ Punishments:
       - "1:1 [log]"
       - "1:0 [webhook]"
       - "1:0 ban %player% [GroundedGrim] Invalid placement (%check_name%)"
-  PacketOrderCKick:
-    remove-violations-after: 300
-    checks:
-      - "PacketOrderC"
-    commands:
-      - "1:1 [alert]"
-      - "1:1 [log]"
-      - "1:0 [webhook]"
-      - "2:0 kick %player% [GroundedGrim] Protocol violation (%check_name%)"
   BadPacketsWKick:
     remove-violations-after: 300
     checks:
@@ -66,19 +57,26 @@ Punishments:
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
-      - "1:0 [webhook]"
-      - "2:0 kick %player% [GroundedGrim] Protocol violation (%check_name%)"
-  ProtocolKick:
+      - "5:0 [webhook]"
+      - "10:0 kick %player% [GroundedGrim] Protocol violation (%check_name%)"
+  BadPacketsFKick:
     remove-violations-after: 300
     checks:
       - "BadPacketsF"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "10:0 [webhook]"
+      - "100:0 kick %player% [GroundedGrim] Protocol violation (%check_name%)"
+  ProtocolKick:
+    remove-violations-after: 300
+    checks:
       - "BadPacketsG"
       - "BadPacketsI"
       - "BadPacketsK"
       - "BadPacketsL"
       - "BadPacketsO"
       - "BadPacketsH"
-      - "PacketOrderB"
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
@@ -116,7 +114,7 @@ Punishments:
       - "1:1 [log]"
       - "5:0 [webhook]"
       - "5:0 [proxy]"
-      - "40:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
+      - "60:0 kick %player% [GroundedGrim] Combat violation (%check_name%)"
   WallHit:
     remove-violations-after: 300
     checks:
@@ -243,8 +241,6 @@ Punishments:
       - "!BadPacketsW"
       - "!BadPacketsY"
       - "PacketOrder"
-      - "!PacketOrderB"
-      - "!PacketOrderC"
     commands:
       - "20:20 [alert]"
       - "20:20 [log]"

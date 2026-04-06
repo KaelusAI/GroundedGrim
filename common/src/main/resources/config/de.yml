@@ -334,7 +334,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Um wie viel sollen wir die Hitboxen erweitern? 0,0005 sollte 3,0005+ Reichweite erkennen
@@ -346,7 +346,7 @@ Reach:
     # Anders als threshold (das die Hitbox erweitert), erweitert dies nur die zulässige Reichweite,
     # ohne die Hitboxes Ray-Schnittprüfung zu beeinflussen.
     # Erhöhen Sie den Wert, wenn Reach falsche Positive aufgrund von Lag/Interpolation auftreten. 0.0 = Standard (streng).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Sollten wir Treffer annullieren, von denen wir wissen, dass sie unmöglich sind?
     # 3.00-3.03-Treffer können aufgrund von Beschränkungen der Paketreihenfolge durchgehen, aber dennoch gekennzeichnet werden.
     block-impossible-hits: true

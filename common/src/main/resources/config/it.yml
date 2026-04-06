@@ -322,7 +322,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Limite per rilevare un attacco oltre la distanza massima
@@ -331,7 +331,7 @@ Reach:
     # A differenza della soglia (che espande l'hitbox), questo estende solo la distanza di portata consentita,
     # senza influenzare il controllo dell'intersezione dei raggi delle hitbox.
     # Aumenta se Reach genera falsi positivi a causa di lag/interpolazione. 0.0 = predefinito (rigoroso).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Annulla gli attacchi impossibili
     block-impossible-hits: true
     # Sends an additional packet at the end of every tick to increase the likelihood of catching cheats.
