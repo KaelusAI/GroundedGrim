@@ -415,8 +415,12 @@ experimental-checks: false
 
 # Enable specific experimental checks individually when experimental-checks is false.
 # When experimental-checks is true, all experimental checks are enabled and this list is ignored.
-# Recommended: AirStuck, ElytraL, ElytraM, InventoryF, InventoryG
-enabled-experimental-checks: []
+enabled-experimental-checks:
+#  - "AirStuck"
+#  - "ElytraL"
+#  - "ElytraM"
+#  - "InventoryF"
+#  - "InventoryG"
 
 reset-item-usage-on-item-update: true
 reset-item-usage-on-attack: true
