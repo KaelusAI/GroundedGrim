@@ -33,7 +33,8 @@ public class AutoTotemC extends Check implements PacketCheck {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
+        if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())
+                || event.getPacketType() == PacketType.Play.Client.CLIENT_TICK_END) {
             pendingOffhandSwapSlot = -1;
             return;
         }
