@@ -1,49 +1,51 @@
-# \u00BB es » (doble >>), ANSI y UTF-8 interpreta esto diferente... puede que incluso veas "?" debido a esto.
+# \u00BB es » (doble >>), ANSI y UTF-8 interpretan esto de forma diferente... puede que incluso veas "?" debido a esto.
 prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertas habilitadas"
 alerts-disabled: "%prefix% &fAlertas deshabilitadas"
-verbose-enabled: "%prefix% &fVerbose enabled"
-verbose-disabled: "%prefix% &fVerbose disabled"
-brands-enabled: "%prefix% &fBrands enabled"
-brands-disabled: "%prefix% &fBrands disabled"
+verbose-enabled: "%prefix% &fVerbose habilitado"
+verbose-disabled: "%prefix% &fVerbose deshabilitado"
+alerts-filter: "%prefix% &fFiltrando alertas para: &b%player%"
+verbose-filter: "%prefix% &fFiltrando verbose para: &b%player%"
+brands-enabled: "%prefix% &fMarcas habilitadas"
+brands-disabled: "%prefix% &fMarcas deshabilitadas"
 client-brand-format: "%prefix% &f%player% se ha unido usando %brand%"
-console-specify-target: "%prefix% &c¡Debes especificar a alguien siendo la consola!"
-reloading: "%prefix% &7Reloading config..."
-reloaded: "%prefix% &fConfig has been reloaded."
-reload-failed: "%prefix% &cFailed to reload config."
-player-not-found: "%prefix% &c¡El jugador esta excluido o fuera de linea!"
-player-not-this-server: "%prefix% &c¡El jugador no esta en este servidor!"
+console-specify-target: "%prefix% &c¡Debes especificar un objetivo desde la consola!"
+reloading: "%prefix% &7Recargando configuración..."
+reloaded: "%prefix% &fLa configuración ha sido recargada."
+reload-failed: "%prefix% &cError al recargar la configuración."
+player-not-found: "%prefix% &c¡El jugador está exento o desconectado!"
+player-not-this-server: "%prefix% &c¡El jugador no está en este servidor!"
 sender-not-found: "%prefix% &c¡No puedes usar este comando si estás exento!"
-spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fClick aquí para volver a la localización previa\n</hover></click>"
-cannot-spectate-return: "%prefix% &cSolo puedes hacer esto despues de espectar a un jugador"
-cannot-run-on-self: "%prefix% &cNo puedes usar este comando en ti mismo!"
-upload-log: "%prefix% &fSubido el registro de depuración a: %url%"
-upload-log-start: "%prefix% &fSubiendo registros... por favor espera"
-upload-log-not-found: "%prefix% &cNo se pudo encontrar ese registro"
-upload-log-upload-failure: "%prefix% &cAlgo salio mal mientras subíamos ese registro, mira la consola para mas información"
+spectate-return: "<click:run_command:/grim stopspectating><hover:show_text:\"/grim stopspectating\">\n%prefix% &fHaz clic aquí para volver a la ubicación anterior\n</hover></click>"
+cannot-spectate-return: "%prefix% &cSolo puedes hacer esto después de espectar a un jugador"
+cannot-run-on-self: "%prefix% &c¡No puedes usar este comando en ti mismo!"
+upload-log: "%prefix% &fDebug subido a: %url%"
+upload-log-start: "%prefix% &fSubiendo log... por favor espera"
+upload-log-not-found: "%prefix% &cNo se pudo encontrar ese log"
+upload-log-upload-failure: "%prefix% &cAlgo salió mal al subir este log, mira la consola para más información"
 disconnect:
     timeout: "<lang:disconnect.timeout>"
     closed: "<lang:disconnect.closed>"
-    error: "<red>An error occurred whilst processing packets. Please contact the administrators."
-    blacklisted-forge: "<red>Your forge version is blacklisted due to inbuilt reach hacks.<newline><gold>Versions affected: 1.18.2-1.19.3<newline><newline><red>Please see https://github.com/MinecraftForge/MinecraftForge/issues/9309."
-run-as-player: "%prefix% &c¡Este comando solo puede ser utilizado por jugadores!"
-run-as-player-or-console: "%prefix% &c¡Este comando solo puede ser utilizado por jugadores o la consola!"
-webhook-not-enabled: "Discord webhooks are not enabled!"
-webhook-test-message: "test message"
-webhook-test-succeeded: "Discord webhook test succeeded!"
-webhook-test-failed: "Discord webhook test failed!"
+    error: "<red>Ocurrió un error al procesar los paquetes. Por favor contacta a los administradores."
+    blacklisted-forge: "<red>Tu versión de Forge está bloqueada debido a hacks de alcance integrados.<newline><gold>Versiones afectadas: 1.18.2-1.19.3<newline><newline><red>Por favor consulta https://github.com/MinecraftForge/MinecraftForge/issues/9309."
+run-as-player: "%prefix% &c¡Este comando solo puede ser usado por jugadores!"
+run-as-player-or-console: "%prefix% &c¡Este comando solo puede ser usado por jugadores o la consola!"
+webhook-not-enabled: "¡Los webhooks de Discord no están habilitados!"
+webhook-test-message: "mensaje de prueba"
+webhook-test-succeeded: "¡Prueba de webhook de Discord exitosa!"
+webhook-test-failed: "¡Prueba de webhook de Discord fallida!"
 
-# Placeholders validos:
+# Placeholders válidos:
 # %prefix%
 # %player%
 # %check_name%
 # %description%
 # %experimental%
 # %vl% - violaciones
-# %verbose% - información extra de la comprobación como compensaciones. No todas añadirán informacion.
+# %verbose% - información extra de la comprobación, no todas las comprobaciones añaden información
 alerts-format: "%prefix% &f%player% &bfalló &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfailed &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfalló &f%check_name%%experimental% &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -58,22 +60,27 @@ profile:
     - "&7======================"
 help:
     - "&7======================"
-    - "/grim alerts &f- &7Alternar alertas"
-    - "/grim brands &f- &7Toggle brands"
-    - "/grim profile <player> &f- &7Mostrar informacion del jugador"
-    - "/grim help &f- &7Mostrar este mensaje de ayuda"
-    - "/grim debug <player> &f- &7Salida de predicciones para desarrolladores"
-    - "/grim perf &f- &7ms/predicción para los desarrolladores"
-    - "/grim reload &f- &7Recarga la configuración"
+    - "/grim alerts [player] &f- &7Alternar alertas (opcionalmente filtrar por jugador)"
+    - "/grim brands &f- &7Alternar marcas"
+    - "/grim profile <player> &f- &7Ver información del jugador"
+    - "/grim help &f- &7Ver este mensaje de ayuda"
+    - "/grim debug start/stop <player> &f- &7Iniciar/detener depuración de predicción"
+    - "/grim debug filter add/remove/reset &f- &7Gestionar filtros de depuración"
+    - "/grim debug paste <player> &f- &7Subir buffer de depuración"
+    - "/grim perf &f- &7Desarrollador ms/predicción"
+    - "/grim reload &f- &7Recargar la configuración"
     - "/grim spectate <player> &f- &7Espectar a un jugador"
-    - "/grim verbose &f- &7Te muestra todo aviso, sin buffers"
-    - "/grim log [0-255] &f- &7Sube un registro de depuración para avisos de predicciones"
-    - "/grim history <player> [página] &f- &7Muestra alertas previas del jugador"
+    - "/grim verbose [player] &f- &7Mostrar cada flag (opcionalmente filtrar por jugador)"
+    - "/grim log <id> &f- &7Subir log de depuración de un flag"
+    - "/grim log last [count] &f- &7Subir los últimos N flags"
+    - "/grim log range <from>-<to> &f- &7Subir un rango de flags"
+    - "/grim logger &f- &7Logger de paquetes (ver /grim logger para subcomandos)"
+    - "/grim history <player> [page] &f- &7Mostrar alertas anteriores del jugador"
     - "&7======================"
 
 grim-history-load-failure: "%prefix% &c¡El subsistema de historial no se pudo cargar! Revisa la consola del servidor en busca de errores."
 grim-history-disabled: "%prefix% &c¡El subsistema de historial está deshabilitado!"
-# Valid placeholders: %prefix% %player% %page% %maxPages%
+# Placeholders válidos: %prefix% %player% %page% %maxPages%
 grim-history-header: "%prefix% &bMostrando registros de &f%player% (&f%page%&b/&f%maxPages%&f)"
-# Valid placeholders: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
-grim-history-entry: "%prefix% &8[&f%server%&8] &bFallido &f%check% (x&c%vl%&f) &7%verbose% (&bhace %timeago%&7)"
+# Placeholders válidos: %prefix% %grim_version% %client_brand% %client_version% %server_version% %check% %vl% %verbose% %timeago% %server%
+grim-history-entry: "%prefix% &8[&f%server%&8] &bFalló &f%check% (x&c%vl%&f) &7%verbose% (&bhace %timeago%&7)"
