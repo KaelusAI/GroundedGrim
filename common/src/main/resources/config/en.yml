@@ -371,7 +371,7 @@ Hitboxes:
     # when checking if a ray intersects the entity hitbox.
     # Increase this if Hitboxes false-flags on your server due to interpolation desync.
     # 0.0 = strict (original Grim behavior), 0.1 = lenient, 0.2+ = very lenient
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # How much should we expand hitboxes by? 0.0005 should detect 3.0005+ reach
@@ -383,7 +383,7 @@ Reach:
     # Unlike threshold (which expands the hitbox), this extends the allowed reach distance only,
     # without affecting the Hitboxes ray intersection check.
     # Increase if Reach false-flags due to lag/interpolation. 0.0 = default (strict).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Should we cancel hits that we know are impossible?
     # 3.00-3.03 hits may go through but still be flagged, due to packet order limitations
     block-impossible-hits: true

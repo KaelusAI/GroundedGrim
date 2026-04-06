@@ -331,7 +331,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Cu cât să mărim hitboxurile? 0.0005 ar trebui să detecteze reach 3.0005+
@@ -343,7 +343,7 @@ Reach:
     # Spre deosebire de prag (care extinde hitbox-ul), aceasta extinde doar distanța de reach permisă,
     # fără a afecta verificarea intersecției de raze a hitbox-urilor.
     # Mărește dacă Reach generează false positive din cauza lag/interpolării. 0.0 = implicit (strict).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Ar trebui să anulăm loviturile imposibile?
     # Lovituri de 3.00-3.03 pot trece dar tot vor fi marcate, din cauza limitărilor de ordine a pachetelor
     block-impossible-hits: true

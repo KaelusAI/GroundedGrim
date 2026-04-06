@@ -334,7 +334,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Por quanto deve-se expandir as caixas de colisão? 0.0005 deve detectar 3.0005+ de alcance.
@@ -347,7 +347,7 @@ Reach:
     # Ao contrário do limite (que expande a caixa de colisão), isso estende apenas a distância de alcance permitida,
     # sem afetar a verificação de interseção de raios das caixas de colisão.
     # Aumente se Reach gerar falsos positivos devido a lag/interpolação. 0.0 = padrão (rigoroso).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Deve-se cancelar hits que sabemos que são impossíveis?
     # O alcance de 3.00-3.03 pode acabar passando, por conta da ordem de pacotes, mas continuará registrando violações.
     block-impossible-hits: true

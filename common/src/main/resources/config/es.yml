@@ -336,7 +336,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Cuanto deberíamos expandir las hit-boxes? 0.0005 debería detectar un reach de 3.0005+
@@ -349,7 +349,7 @@ Reach:
     # A diferencia del umbral (que expande la hitbox), esto extiende solo la distancia de alcance permitida,
     # sin afectar la comprobación de intersección de rayos de Hitboxes.
     # Aumenta si Reach genera falsos positivos debido a lag/interpolación. 0.0 = predeterminado (estricto).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # ¿Deberíamos cancelar golpes que sabemos que son imposibles?
     # Golpes de 3.00-3.03 puede que aun asi pasen, pero se marcaran debido a limitaciones del orden de paquetes.
     block-impossible-hits: true

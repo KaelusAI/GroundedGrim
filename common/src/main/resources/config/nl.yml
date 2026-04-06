@@ -331,7 +331,7 @@ EntityPierce:
     setbackvl: 30
 
 Hitboxes:
-    extra-expansion: 0.0
+    extra-expansion: 0.01
 
 Reach:
     # Met hoeveel moeten we hitboxes uitbreiden? 0.0005 moet 3.0005+ bereik detecteren
@@ -343,7 +343,7 @@ Reach:
     # In tegenstelling tot drempel (die de hitbox uitbreidt), breidt dit alleen de toegestane bereikafstand uit,
     # zonder de rayintersectiecontrole van Hitboxes te beïnvloeden.
     # Verhoog als Reach valse positieven geeft vanwege lag/interpolatie. 0.0 = standaard (strikt).
-    extra-expansion: 0.0
+    extra-expansion: 0.01
     # Moeten we hits annuleren waarvan we weten dat ze onmogelijk zijn?
     # 3.00-3.03 hits kunnen doorkomen, maar toch gemarkeerd worden, vanwege pakketvolgorderbeperkingen
     block-impossible-hits: true
