@@ -5,6 +5,8 @@ import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.PostPredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
+import ac.grim.grimac.utils.nmsutil.BlockUtil;
+import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 
 @CheckData(name = "ElytraL", description = "Checks for impossible elytra hovering", experimental = true, decay = 0.05, setback = 3)
@@ -31,8 +33,18 @@ public class ElytraL extends Check implements PostPredictionCheck {
                 || player.lastOnGround
                 || player.isFlying
                 || player.verticalCollision
+                || player.horizontalCollision
+                || player.inVehicle()
+                || player.isClimbing
+                || player.packetStateData.tryingToRiptide
+                || player.predictedVelocity.isKnockback()
+                || player.predictedVelocity.isExplosion()
                 || player.compensatedEntities.getSlowFallingAmplifier().isPresent()
-                || isInCobweb()) {
+                || player.compensatedEntities.getPotionLevelForPlayer(PotionTypes.LEVITATION).isPresent()
+                || BlockUtil.isPlayerInBlockType(player, StateTypes.COBWEB)
+                || BlockUtil.isPlayerInBlockType(player, StateTypes.POWDER_SNOW)
+                || BlockUtil.isPlayerInBlockType(player, StateTypes.BUBBLE_COLUMN)
+                || player.getTransactionPing() > 500) {
             hoverTicks = 0;
             return;
         }
@@ -50,12 +62,5 @@ public class ElytraL extends Check implements PostPredictionCheck {
             hoverTicks = Math.max(0, hoverTicks - 2);
             reward();
         }
-    }
-
-    private boolean isInCobweb() {
-        int blockX = (int) Math.floor(player.x);
-        int blockY = (int) Math.floor(player.y);
-        int blockZ = (int) Math.floor(player.z);
-        return player.compensatedWorld.getBlock(blockX, blockY, blockZ).getType() == StateTypes.COBWEB;
     }
 }
