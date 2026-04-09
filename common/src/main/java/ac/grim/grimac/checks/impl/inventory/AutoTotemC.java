@@ -16,6 +16,8 @@ public class AutoTotemC extends Check implements PacketCheck {
 
     private int clickCountThisSession = 0;
     private int pendingOffhandSwapSlot = -1;
+    private int flyingTicksInSession = 0;
+    private long lastTickTimestamp = 0;
     private double buffer;
     private boolean debug = false;
 
@@ -35,7 +37,10 @@ public class AutoTotemC extends Check implements PacketCheck {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())
                 || event.getPacketType() == PacketType.Play.Client.CLIENT_TICK_END) {
-            pendingOffhandSwapSlot = -1;
+            lastTickTimestamp = System.currentTimeMillis();
+            if (clickCountThisSession > 0) {
+                flyingTicksInSession++;
+            }
             return;
         }
 
@@ -65,20 +70,31 @@ public class AutoTotemC extends Check implements PacketCheck {
         }
 
         if (event.getPacketType() == PacketType.Play.Client.CLOSE_WINDOW) {
-            if (pendingOffhandSwapSlot != -1 && clickCountThisSession == 1) {
-                if (debug) {
-                    ac.grim.grimac.utils.anticheat.LogUtil.info("[AutoTotemC] " + player.user.getName()
-                            + " isolated SWAP+CLOSE pattern, slot=" + pendingOffhandSwapSlot);
-                }
+            if (pendingOffhandSwapSlot != -1 && clickCountThisSession == 1 && flyingTicksInSession == 0) {
+                // 1.9-1.21.1 clients can skip flying packets when standing still.
+                // 1.21.2+ always sends CLIENT_TICK_END so this doesn't apply to them.
+                boolean clientWasSkippingTicks = player.canSkipTicks()
+                        && (System.currentTimeMillis() - lastTickTimestamp) > 80;
 
-                flagAndAlert("slot=" + pendingOffhandSwapSlot);
+                buffer += clientWasSkippingTicks ? 0.5 : 1.0;
+
+                if (buffer >= 2.0) {
+                    if (debug) {
+                        ac.grim.grimac.utils.anticheat.LogUtil.info("[AutoTotemC] " + player.user.getName()
+                                + " isolated SWAP+CLOSE pattern, slot=" + pendingOffhandSwapSlot
+                                + " buffer=" + buffer + " skipping=" + clientWasSkippingTicks);
+                    }
+
+                    flagAndAlert("slot=" + pendingOffhandSwapSlot);
+                }
             } else {
-                buffer = Math.max(0, buffer - 0.25);
+                buffer = Math.max(0, buffer - 0.5);
                 reward();
             }
 
             clickCountThisSession = 0;
             pendingOffhandSwapSlot = -1;
+            flyingTicksInSession = 0;
         }
     }
 }
