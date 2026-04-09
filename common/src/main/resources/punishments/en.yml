@@ -35,12 +35,21 @@ Punishments:
     remove-violations-after: 300
     checks:
       - "Crash"
+      - "!CrashB"
     commands:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "1:0 [webhook]"
       - "1:0 [proxy]"
       - "5:0 ban %player% [GroundedGrim] Crash exploit (%check_name%)"
+  CrashBAlert:
+    remove-violations-after: 300
+    checks:
+      - "CrashB"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "3:0 [webhook]"
   ExploitBan:
     remove-violations-after: 300
     checks:
@@ -93,7 +102,7 @@ Punishments:
       - "10:0 [webhook]"
       - "10:0 [proxy]"
       - "20:0 kick %player% [GroundedGrim] Protocol violation (%check_name%)"
-  PlaceKick:
+  Place:
     remove-violations-after: 300
     checks:
       - "FarPlace"
@@ -102,7 +111,6 @@ Punishments:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "3:0 [webhook]"
-      - "5:0 kick %player% [GroundedGrim] Placement violation (%check_name%)"
   Timer:
     remove-violations-after: 300
     checks:
@@ -277,10 +285,9 @@ Punishments:
       - "1:1 [log]"
       - "2:0 [webhook]"
       - "4:0 kick %player% [GroundedGrim] Elytra violation (%check_name%)"
-  ElytraLMKick:
+  ElytraMKick:
     remove-violations-after: 300
     checks:
-      - "ElytraL"
       - "ElytraM"
     commands:
       - "1:1 [alert]"
