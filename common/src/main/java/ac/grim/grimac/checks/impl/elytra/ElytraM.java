@@ -5,6 +5,7 @@ import ac.grim.grimac.checks.CheckData;
 import ac.grim.grimac.checks.type.PostPredictionCheck;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
+import ac.grim.grimac.utils.nmsutil.BlockUtil;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes;
 
 @CheckData(name = "ElytraM", description = "Checks for velocity discontinuities during elytra flight", experimental = true, decay = 0.05, setback = 5)
@@ -41,7 +42,7 @@ public class ElytraM extends Check implements PostPredictionCheck {
                 || player.verticalCollision || player.horizontalCollision
                 || player.packetStateData.tryingToRiptide
                 || player.compensatedEntities.getSlowFallingAmplifier().isPresent()
-                || isInCobweb()
+                || BlockUtil.isPlayerInBlockType(player, StateTypes.COBWEB)
                 || player.predictedVelocity.isKnockback()
                 || player.predictedVelocity.isExplosion()
                 || player.getTransactionPing() > 500) {
@@ -104,10 +105,4 @@ public class ElytraM extends Check implements PostPredictionCheck {
         buffer = 0;
     }
 
-    private boolean isInCobweb() {
-        int blockX = (int) Math.floor(player.x);
-        int blockY = (int) Math.floor(player.y);
-        int blockZ = (int) Math.floor(player.z);
-        return player.compensatedWorld.getBlock(blockX, blockY, blockZ).getType() == StateTypes.COBWEB;
-    }
 }
