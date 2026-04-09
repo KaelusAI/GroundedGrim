@@ -40,6 +40,8 @@ public class AutoTotemC extends Check implements PacketCheck {
             lastTickTimestamp = System.currentTimeMillis();
             if (clickCountThisSession > 0) {
                 flyingTicksInSession++;
+            } else if (buffer > 0) {
+                buffer = Math.max(0, buffer - 0.025);
             }
             return;
         }
