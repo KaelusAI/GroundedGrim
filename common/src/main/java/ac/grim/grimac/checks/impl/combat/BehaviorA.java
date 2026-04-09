@@ -22,6 +22,7 @@ public class BehaviorA extends Check implements RotationCheck {
                 || player.packetStateData.lastPacketWasTeleport
                 || player.gamemode == GameMode.SPECTATOR
                 || player.inVehicle()
+                || player.compensatedEntities.self.isDead
                 || System.currentTimeMillis() - player.joinTime < 5000
                 || System.currentTimeMillis() - player.lastAttackTime > 500) {
             return;
