@@ -487,7 +487,7 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
         UUID uuid = entity.getUuid();
         if (uuid == null) return false; // no entity uuid below 1.9, nothing to put in a team
 
-        TeamHandler teams = receiver.checkManager.getCheck(TeamHandler.class);
+        TeamHandler teams = receiver.checkManager.get(TeamHandler.class);
         // Joining our team would drop it out of the one it is in, changing its colour and collision.
         if (teams == null || teams.getEntityTeam(entity) != null) return false;
 

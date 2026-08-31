@@ -36,7 +36,7 @@ public final class EntityPushSimulator {
 
         SimpleCollisionBox probeBox = playerBox.copy().expand(0.2);
 
-        TeamHandler teamHandler = player.checkManager.getCheck(TeamHandler.class);
+        TeamHandler teamHandler = player.checkManager.get(TeamHandler.class);
         EntityTeam playerTeam = teamHandler != null ? teamHandler.getPlayerTeam() : null;
 
         double[] buf = new double[4];

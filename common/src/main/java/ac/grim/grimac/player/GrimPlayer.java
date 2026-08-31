@@ -58,6 +58,7 @@ import com.github.retrooper.packetevents.protocol.ConnectionState;
 import com.github.retrooper.packetevents.protocol.attribute.Attributes;
 import com.github.retrooper.packetevents.protocol.component.ComponentTypes;
 import com.github.retrooper.packetevents.protocol.component.builtin.item.ItemEquippable;
+import com.github.retrooper.packetevents.protocol.entity.EntityPositionData;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityType;
 import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.item.ItemStack;
@@ -133,7 +134,6 @@ public class GrimPlayer implements GrimUser {
     private long transactionPing;
     public long lastTransSent;
     public long lastTransReceived;
-    @Getter
     private long playerClockAtLeast = System.nanoTime();
     public double lastWasClimbing;
     public boolean canSwimHop;
@@ -441,7 +441,7 @@ public class GrimPlayer implements GrimUser {
             if (viaPacketTracker != null) viaPacketTracker.setIntervalPackets(viaPacketTracker.getIntervalPackets() - 1);
 
             if (skipped > 0 && System.currentTimeMillis() - joinTime > 5000)
-                checkManager.getCheck(TransactionOrder.class).flag("skipped=" + skipped);
+                checkManager.get(TransactionOrder.class).flag("skipped=" + skipped);
 
             do {
                 data = transactionsSent.poll();
@@ -646,7 +646,7 @@ public class GrimPlayer implements GrimUser {
                 boolean disabledPermission = hasPermission("grim.disabled");
                 boolean exemptPermission = hasPermission("grim.exempt");
                 boolean noSpoofPermission = hasPermission("grim.nospoof");
-                for (AbstractCheck check : checkManager.allChecks.values()) {
+                for (AbstractCheck check : getChecks()) {
                     if (check instanceof Check c) {
                         c.updatePermissions();
                     }
@@ -758,6 +758,13 @@ public class GrimPlayer implements GrimUser {
         return PacketEvents.getAPI().getPlayerManager().getPing(platformPlayer.getNative());
     }
 
+    public long getPlayerClockAtLeast() {
+        if (lastTransactionSent.get() == 0) {
+            playerClockAtLeast = System.nanoTime();
+        }
+        return playerClockAtLeast;
+    }
+
     public SetbackTeleportUtil getSetbackTeleportUtil() {
         return checkManager.getSetbackUtil();
     }
@@ -828,7 +835,16 @@ public class GrimPlayer implements GrimUser {
                 int ridingId = getRidingVehicleId();
                 TrackerData data = compensatedEntities.serverPositionsMap.get(ridingId);
                 if (data != null) {
-                    user.writePacket(new WrapperPlayServerEntityTeleport(ridingId, new Vector3d(data.getX(), data.getY(), data.getZ()), data.getXRot(), data.getYRot(), false));
+                    final Vector3d pos = new Vector3d(data.getX(), data.getY(), data.getZ());
+                    // Resync the position of the entity
+                    if (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_21_2)) {
+                        // Yes, this is the new "entity teleport" on 1.21.2+!
+                        // WrapperPlayServerEntityTeleport on 1.21.2+ still exists but has a different purpose!
+                        // Using WrapperPlayServerEntityTeleport is wrong and will lead to weird behaviour!
+                        user.writePacket(new WrapperPlayServerEntityPositionSync(ridingId, new EntityPositionData(pos, new Vector3d(), data.getXRot(), data.getYRot()), false));
+                    } else {
+                        user.writePacket(new WrapperPlayServerEntityTeleport(ridingId, pos, data.getXRot(), data.getYRot(), false));
+                    }
                 }
             }
         });
@@ -871,10 +887,8 @@ public class GrimPlayer implements GrimUser {
         return equippable.isPresent() && equippable.get().getSlot() == slot;
     }
 
-    public void resyncPose() {
-        if (getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_14) && platformPlayer != null) {
-            platformPlayer.setSneaking(!platformPlayer.isSneaking());
-        }
+    public void resyncGlidingState() {
+        if (platformPlayer != null) platformPlayer.resyncSharedFlags();
     }
 
     public boolean canPlaceGameMasterBlocks() {
@@ -944,7 +958,7 @@ public class GrimPlayer implements GrimUser {
 
     @Override
     public String getBrand() {
-        return checkManager.getCheck(ClientBrand.class).getBrand();
+        return checkManager.get(ClientBrand.class).getBrand();
     }
 
     @Override
@@ -964,12 +978,12 @@ public class GrimPlayer implements GrimUser {
 
     @Override
     public double getHorizontalSensitivity() {
-        return checkManager.getCheck(AimProcessor.class).sensitivityX;
+        return checkManager.get(AimProcessor.class).sensitivityYaw;
     }
 
     @Override
     public double getVerticalSensitivity() {
-        return checkManager.getCheck(AimProcessor.class).sensitivityY;
+        return checkManager.get(AimProcessor.class).sensitivityPitch;
     }
 
     @Override
@@ -979,7 +993,7 @@ public class GrimPlayer implements GrimUser {
 
     @Override
     public Collection<? extends AbstractCheck> getChecks() {
-        return checkManager.allChecks.values();
+        return checkManager.checks;
     }
 
     public void runNettyTaskInMs(@NotNull Runnable runnable, int ms) {
@@ -1025,7 +1039,7 @@ public class GrimPlayer implements GrimUser {
         resetItemUsageOnSlotChange = config.getBooleanElse("reset-item-usage-on-slot-change", true);
         resetItemUsageOnItemUse = config.getBooleanElse("reset-item-usage-on-item-use", true);
         // reload all checks
-        for (AbstractCheck value : checkManager.allChecks.values()) value.reload();
+        checkManager.reload();
         // reload punishment manager
         punishmentManager.reload(config);
         this.movementCheckRunner.reload(config);

@@ -66,7 +66,7 @@ public class MovementTicker {
             // Lag-comp-widened probe: remember when a pushable entity was plausibly near (push-FP fix).
             final SimpleCollisionBox playerBoxWide = playerBox.copy().expand(0.3);
 
-            final TeamHandler teamHandler = player.checkManager.getCheck(TeamHandler.class);
+            final TeamHandler teamHandler = player.checkManager.get(TeamHandler.class);
             final EntityTeam playerTeam = teamHandler != null ? teamHandler.getPlayerTeam() : null;
             for (PacketEntity entity : player.compensatedEntities.entityMap.values()) {
                 // TODO actually handle entity collisions instead of this awfulness

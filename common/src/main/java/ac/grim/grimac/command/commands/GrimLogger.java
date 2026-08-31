@@ -108,7 +108,7 @@ public class GrimLogger implements BuildableCommand {
         GrimPlayer target = resolveTarget(sender, ctx.get("target"));
         if (target == null) return;
 
-        PacketLogger logger = target.checkManager.getCheck(PacketLogger.class);
+        PacketLogger logger = target.checkManager.get(PacketLogger.class);
         if (logger == null) {
             sender.sendMessage(Component.text("[Logger] PacketLogger not found.", NamedTextColor.RED));
             return;
@@ -149,7 +149,7 @@ public class GrimLogger implements BuildableCommand {
         GrimPlayer target = resolveTarget(sender, ctx.get("target"));
         if (target == null) return;
 
-        PacketLogger logger = target.checkManager.getCheck(PacketLogger.class);
+        PacketLogger logger = target.checkManager.get(PacketLogger.class);
         if (logger == null || !logger.isActive()) {
             sender.sendMessage(Component.text()
                     .append(Component.text("[Logger] ", NamedTextColor.GOLD))
@@ -172,7 +172,7 @@ public class GrimLogger implements BuildableCommand {
         GrimPlayer target = resolveTarget(sender, ctx.get("target"));
         if (target == null) return;
 
-        PacketLogger logger = target.checkManager.getCheck(PacketLogger.class);
+        PacketLogger logger = target.checkManager.get(PacketLogger.class);
         if (logger == null) {
             sender.sendMessage(Component.text("[Logger] PacketLogger not found.", NamedTextColor.RED));
             return;

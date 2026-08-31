@@ -28,7 +28,7 @@ public class BehaviorA extends Check implements RotationListener {
             return;
         }
 
-        final float pitch = rotationUpdate.getTo().pitch();
+        final float pitch = rotationUpdate.newPitch();
 
         if (pitch == 0) {
             flagAndAlert("");

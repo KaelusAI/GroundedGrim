@@ -300,7 +300,7 @@ public class GrimDebug implements BuildableCommand {
         GrimPlayer senderPlayer = resolveSenderPlayer(sender);
         if (senderPlayer == null) return;
 
-        HitboxDebugHandler hitboxHandler = target.checkManager.getCheck(HitboxDebugHandler.class);
+        HitboxDebugHandler hitboxHandler = target.checkManager.get(HitboxDebugHandler.class);
         if (hitboxHandler == null) {
             sender.sendMessage(Component.text("HitboxDebugHandler not found.", NamedTextColor.RED));
             return;

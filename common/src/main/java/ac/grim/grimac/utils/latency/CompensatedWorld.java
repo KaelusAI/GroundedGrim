@@ -111,8 +111,6 @@ public class CompensatedWorld implements PacketWorld {
             if (iter.getKey() <= prediction) {
                 applyBlockChanges(iter.getValue());
                 it.remove();
-            } else {
-                break;
             }
         }
     }
@@ -218,6 +216,14 @@ public class CompensatedWorld implements PacketWorld {
         }
     }
 
+    public void clearPredictions() {
+        originalServerBlocks.clear();
+        currentlyChangedBlocks = new LinkedList<>();
+        serverIsCurrentlyProcessingThesePredictions.clear();
+        unackedActions.clear();
+        isCurrentlyPredicting = false;
+    }
+
     public static long chunkPositionToLong(int x, int z) {
         return ((x & 0xFFFFFFFFL) << 32L) | (z & 0xFFFFFFFFL);
     }
@@ -313,7 +319,7 @@ public class CompensatedWorld implements PacketWorld {
             // Here, where both states are in scope: a resync that rewrites the same block is not a change,
             // and counting it would hand out the wall hit exemption for free.
             if (!previousState.equals(newState)) {
-                player.checkManager.getCheck(Reach.class).handleBlockChange(new Vector3i(x, y, z));
+                player.checkManager.get(Reach.class).handleBlockChange(new Vector3i(x, y, z));
             }
 
             chunk.set(x & 0xF, offsetY & 0xF, z & 0xF, combinedID);

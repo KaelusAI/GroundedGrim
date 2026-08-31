@@ -36,22 +36,19 @@ public class PacketEntityAction extends PacketListenerAbstract {
             if (player == null) return;
 
             switch (action.getAction()) {
-                case START_SPRINTING:
+                case START_SPRINTING -> {
                     player.isSprinting = true;
                     player.vehicleData.camelSprintingState = SprintingState.STARTED;
-                    break;
-                case STOP_SPRINTING:
+                }
+                case STOP_SPRINTING -> {
                     player.isSprinting = false;
                     player.vehicleData.camelSprintingState = SprintingState.STOPPED;
-                    break;
-                case START_SNEAKING:
-                    player.isSneaking = true;
-                    break;
-                case STOP_SNEAKING:
-                    player.isSneaking = false;
-                    break;
-                case START_FLYING_WITH_ELYTRA:
-                    if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9)) return;
+                }
+                case START_SNEAKING -> player.isSneaking = true;
+                case STOP_SNEAKING -> player.isSneaking = false;
+                case START_FLYING_WITH_ELYTRA -> {
+                    if (PacketEvents.getAPI().getServerManager().getVersion().isOlderThan(ServerVersion.V_1_9))
+                        return;
 
                     // Block elytra if player hasn't sent position data for 2+ ticks (1.21.2+ only)
                     // On 1.21.2+ threshold is 0.0002 so position is always sent during any movement
@@ -64,18 +61,13 @@ public class PacketEntityAction extends PacketListenerAbstract {
 
                     if (player.onGround || player.lastOnGround || noRecentPosition) {
                         player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
-
-                        if (player.platformPlayer != null) {
-                            // Client ignores sneaking, use it to resync
-                            player.platformPlayer.setSneaking(!player.platformPlayer.isSneaking());
-                        }
-
+                        player.resyncGlidingState();
                         event.setCancelled(true);
                         player.onPacketCancel();
-                        break;
+                        return;
                     }
 
-                    player.checkManager.getCheck(ElytraA.class).onStartGliding(event);
+                    player.checkManager.get(ElytraA.class).onStartGliding(event);
 
                     // Starting fall flying is server sided on 1.14 and below
                     if (player.getClientVersion().isOlderThan(ClientVersion.V_1_15)) return;
@@ -88,21 +80,18 @@ public class PacketEntityAction extends PacketListenerAbstract {
                     } else {
                         // A client is flying with a ghost elytra, resync
                         player.getSetbackTeleportUtil().executeNonSimulatingForceResync();
-                        if (player.platformPlayer != null) {
-                            // Client ignores sneaking, use it to resync
-                            player.platformPlayer.setSneaking(!player.platformPlayer.isSneaking());
-                        }
+                        player.resyncGlidingState();
                         event.setCancelled(true);
                         player.onPacketCancel();
                     }
-                    break;
-                case START_JUMPING_WITH_HORSE:
+                }
+                case START_JUMPING_WITH_HORSE -> {
                     PacketEntity riding = player.compensatedEntities.self.getRiding();
                     if (riding instanceof JumpableEntity jumpable) {
                         if (player.vehicleData.pendingJumps.size() >= 20) return; // discard
                         player.vehicleData.pendingJumps.add(new IntToObjectPair<>(action.getJumpBoost(), jumpable));
                     }
-                    break;
+                }
             }
         }
     }

@@ -177,7 +177,7 @@ public class DebugHandler extends AbstractDebugHandler implements PostPrediction
             DebugSettings settings = listenerSettings.getOrDefault(listener, new DebugSettings());
             if (!shouldSend(settings, offset, isFlag)) continue;
 
-            Component listenerPrefix = listener == getPlayer() ? Component.empty() : prefixComponent;
+            Component listenerPrefix = listener == player ? Component.empty() : prefixComponent;
             listener.sendMessage(listenerPrefix.append(p));
             listener.sendMessage(listenerPrefix.append(a));
             listener.sendMessage(listenerPrefix.append(o));

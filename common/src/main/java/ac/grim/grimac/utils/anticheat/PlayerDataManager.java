@@ -108,7 +108,7 @@ public class PlayerDataManager {
     public void onDisconnect(User user) {
         GrimPlayer grimPlayer = remove(user);
         if (grimPlayer != null) {
-            PacketLogger packetLogger = grimPlayer.checkManager.getCheck(PacketLogger.class);
+            PacketLogger packetLogger = grimPlayer.checkManager.get(PacketLogger.class);
             if (packetLogger != null) packetLogger.stop();
             Channels.QUIT.fire(grimPlayer);
         }

@@ -38,7 +38,7 @@ public class AuraSnapBack extends Check implements RotationListener {
 
     @Override
     public void process(RotationUpdate rotationUpdate) {
-        float currentYaw = rotationUpdate.getTo().yaw();
+        float currentYaw = rotationUpdate.newYaw();
 
         if (player.lastAttackTime > lastProcessedAttackTime
                 && player.gamemode != GameMode.CREATIVE
@@ -57,7 +57,7 @@ public class AuraSnapBack extends Check implements RotationListener {
         if (pendingAttackTicks >= 0) {
             pendingAttackTicks++;
 
-            float spikeAbs = Math.abs(rotationUpdate.getDeltaXRot());
+            float spikeAbs = Math.abs(rotationUpdate.deltaYaw());
             if (!sawSpike && spikeAbs > snapThreshold) sawSpike = true;
 
             if (sawSpike) {
