@@ -35,6 +35,8 @@ import com.github.retrooper.packetevents.protocol.player.ClientVersion;
 import com.github.retrooper.packetevents.protocol.player.Equipment;
 import com.github.retrooper.packetevents.protocol.player.User;
 import com.github.retrooper.packetevents.protocol.player.UserProfile;
+import com.github.retrooper.packetevents.protocol.score.FixedScoreFormat;
+import com.github.retrooper.packetevents.protocol.score.ScoreFormat;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerDestroyEntities;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
@@ -45,6 +47,7 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPl
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSpawnEntity;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerResetScore;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateScore;
 import io.github.retrooper.packetevents.adventure.serializer.gson.GsonComponentSerializer;
 import io.github.retrooper.packetevents.adventure.serializer.legacy.LegacyComponentSerializer;
@@ -108,6 +111,8 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
     private static final Set<String> harmlessScores = ConcurrentHashMap.newKeySet();
     private static final Map<String, Integer> scoreMisses = new ConcurrentHashMap<>();
     private static final Set<UUID> silencedTeams = ConcurrentHashMap.newKeySet();
+    // Scores rewritten before a viewer's permissions resolved; replayed real once grim.nospoof shows up.
+    private static final Map<UUID, Map<String, RealScore>> realScores = new ConcurrentHashMap<>();
 
     private static final EnchantmentType DECOY_ENCHANTMENT = EnchantmentTypes.UNBREAKING;
 
@@ -336,13 +341,18 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
             if (!spoofHealthScore) return;
 
             WrapperPlayServerUpdateScore wrapper = new WrapperPlayServerUpdateScore(event);
-            if (wrapper.getAction() != WrapperPlayServerUpdateScore.Action.CREATE_OR_UPDATE_ITEM) return;
-
             String owner = wrapper.getEntityName();
+            String objective = wrapper.getObjectiveName();
+            UUID viewer = event.getUser().getUUID();
+            // PE leaves action null on 1.20.3+ (removal moved to RESET_SCORE), so only an explicit remove skips.
+            if (wrapper.getAction() == WrapperPlayServerUpdateScore.Action.REMOVE_ITEM) {
+                forgetScore(viewer, objective, owner);
+                return;
+            }
+
             UserProfile profile = event.getUser().getProfile();
             if (owner == null || owner.equals(profile == null ? null : profile.getName())) return;
 
-            String objective = wrapper.getObjectiveName();
             String criterion = GrimAPI.INSTANCE.getPlatformServer().getObjectiveCriterion(objective);
             // The criterion never reaches the client, so health in a dummy objective looks the same on the
             // wire as anything else. Name matching catches the ones we are told about.
@@ -360,9 +370,20 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
             float shown = fakeHealth(id, healthValue);
             Walk walk = fakeDamage && id != null ? walks.get(id) : null;
             int spoofed = Math.round(walk == null ? shown : walk.shown);
-            if (wrapper.getValue().orElse(Integer.MIN_VALUE) == spoofed) return;
+            // 1.20.3+ can swap the number for fixed text, which would carry the real value past the spoof.
+            boolean fixedText = wrapper.getScoreFormat() instanceof FixedScoreFormat;
+            if (!fixedText && wrapper.getValue().orElse(Integer.MIN_VALUE) == spoofed) return;
+            if (viewer != null) {
+                realScores.computeIfAbsent(viewer, k -> new ConcurrentHashMap<>()).put(objective + '\0' + owner,
+                        new RealScore(objective, owner, wrapper.getValue().orElse(0), wrapper.getEntityDisplayName(), wrapper.getScoreFormat()));
+            }
             wrapper.setValue(Optional.of(spoofed));
+            if (fixedText) wrapper.setScoreFormat(ScoreFormat.fixedScore(Component.text(spoofed)));
             event.markForReEncode(true);
+        } else if (event.getPacketType() == PacketType.Play.Server.RESET_SCORE) {
+            if (!spoofHealthScore) return;
+            WrapperPlayServerResetScore reset = new WrapperPlayServerResetScore(event);
+            forgetScore(event.getUser().getUUID(), reset.getObjective(), reset.getTargetName());
         } else if (event.getPacketType() == PacketType.Play.Server.SPAWN_ENTITY) {
             if (!namePlainMobs || mobNames.component.isEmpty()) return;
 
@@ -533,7 +554,29 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
         peakHealth.remove(uuid);
         visibleMax.remove(uuid);
         walks.remove(uuid);
+        realScores.remove(uuid);
     }
+
+    // A viewer who just gained grim.nospoof still has the lie from the join burst cached client-side.
+    public static void replayRealScores(User user) {
+        UUID viewer = user.getUUID();
+        Map<String, RealScore> cached = viewer == null ? null : realScores.remove(viewer);
+        if (cached == null) return;
+        for (RealScore s : cached.values()) {
+            user.sendPacketSilently(new WrapperPlayServerUpdateScore(s.owner(), WrapperPlayServerUpdateScore.Action.CREATE_OR_UPDATE_ITEM,
+                    s.objective(), s.value(), s.displayName(), s.format()));
+        }
+    }
+
+    // Legacy REMOVE_ITEM and RESET_SCORE both carry an empty objective when the owner leaves every objective.
+    private static void forgetScore(@Nullable UUID viewer, @Nullable String objective, @Nullable String owner) {
+        Map<String, RealScore> cached = viewer == null || owner == null ? null : realScores.get(viewer);
+        if (cached == null) return;
+        if (objective == null || objective.isEmpty()) cached.keySet().removeIf(k -> k.endsWith('\0' + owner));
+        else cached.remove(objective + '\0' + owner);
+    }
+
+    private record RealScore(String objective, String owner, int value, @Nullable Component displayName, @Nullable ScoreFormat format) {}
 
     // The client clamps health down to max_health itself, so anything above the max it was told is erased.
     private static float fakeHealth(@Nullable UUID target, float clientMax) {

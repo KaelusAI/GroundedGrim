@@ -13,6 +13,7 @@ import ac.grim.grimac.checks.impl.misc.TransactionOrder;
 import ac.grim.grimac.checks.impl.packetorder.PacketOrderProcessor;
 import ac.grim.grimac.events.packets.CheckManagerListener;
 import ac.grim.grimac.events.packets.PacketEntityReplication;
+import ac.grim.grimac.events.packets.PacketInfoSpoof;
 import ac.grim.grimac.manager.*;
 import ac.grim.grimac.manager.player.features.FeatureManagerImpl;
 import ac.grim.grimac.manager.player.handlers.DefaultResyncHandler;
@@ -653,7 +654,10 @@ public class GrimPlayer implements GrimUser {
                 }
 
                 this.noModifyPacketPermission = noModifyPacketPermission;
+                boolean gainedNoSpoof = noSpoofPermission && !this.noSpoofPermission;
                 this.noSpoofPermission = noSpoofPermission;
+                // Field first: the replay passes through our own pre-via listener, which reads it.
+                if (gainedNoSpoof) PacketInfoSpoof.replayRealScores(user);
                 this.noSetbackPermission = noSetbackPermission;
                 this.disableGrim = disabledPermission;
                 if (exemptPermission) {
