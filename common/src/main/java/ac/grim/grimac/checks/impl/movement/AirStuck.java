@@ -174,9 +174,12 @@ public class AirStuck extends Check implements PacketReceiveListener {
         GrimAPI.INSTANCE.getScheduler().getEntityScheduler().execute(
                 player.platformPlayer,
                 GrimAPI.INSTANCE.getGrimPlugin(),
-                () -> player.platformPlayer.teleportAsync(
-                        new ac.grim.grimac.utils.math.Location(
-                                world, finalX, finalY, finalZ, yaw, pitch)),
+                () -> {
+                    player.platformPlayer.resetFallDistance();
+                    player.platformPlayer.teleportAsync(
+                            new ac.grim.grimac.utils.math.Location(
+                                    world, finalX, finalY, finalZ, yaw, pitch));
+                },
                 null, 0);
     }
 }

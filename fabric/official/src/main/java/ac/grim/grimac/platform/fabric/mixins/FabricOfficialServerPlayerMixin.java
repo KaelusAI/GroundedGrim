@@ -84,6 +84,10 @@ abstract class FabricOfficialServerPlayerMixin extends Player {
         return this.inventory.getContainerSize();
     }
 
+    public void grim$clearFallDistance() {
+        this.fallDistance = 0;
+    }
+
     // NOTE: isUsingItem()/stopUsingItem() are intentionally NOT bodied here. On the mojmap
     // runtime the vanilla ServerPlayer methods of the same name satisfy the injected interface
     // directly; a grim$ body would graft a same-named method and self-recurse (StackOverflow).

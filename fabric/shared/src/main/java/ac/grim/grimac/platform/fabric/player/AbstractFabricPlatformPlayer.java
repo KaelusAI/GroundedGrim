@@ -97,6 +97,11 @@ public abstract class AbstractFabricPlatformPlayer<T> extends AbstractFabricGrim
     }
 
     @Override
+    public void resetFallDistance() {
+        handle().clearFallDistance();
+    }
+
+    @Override
     public PlatformInventory getInventory() {
         return inventory;
     }

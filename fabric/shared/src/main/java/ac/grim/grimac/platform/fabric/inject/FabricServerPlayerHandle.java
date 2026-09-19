@@ -47,4 +47,6 @@ public interface FabricServerPlayerHandle {
     Object usedItemHand();
 
     int inventorySlotCount();
+
+    void clearFallDistance();
 }

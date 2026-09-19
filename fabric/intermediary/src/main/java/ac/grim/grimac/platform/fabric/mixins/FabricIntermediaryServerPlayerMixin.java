@@ -92,4 +92,8 @@ abstract class FabricIntermediaryServerPlayerMixin extends Player {
     public int grim$inventorySlotCount() {
         return this.inventory.getContainerSize();
     }
+
+    public void grim$clearFallDistance() {
+        this.fallDistance = 0;
+    }
 }

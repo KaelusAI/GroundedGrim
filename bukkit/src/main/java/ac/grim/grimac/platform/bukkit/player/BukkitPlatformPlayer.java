@@ -134,6 +134,11 @@ public class BukkitPlatformPlayer extends BukkitGrimEntity implements PlatformPl
     }
 
     @Override
+    public void resetFallDistance() {
+        bukkitPlayer.setFallDistance(0);
+    }
+
+    @Override
     public void setGameMode(GameMode gameMode) {
         bukkitPlayer.setGameMode(SpigotConversionUtil.toBukkitGameMode(gameMode));
     }

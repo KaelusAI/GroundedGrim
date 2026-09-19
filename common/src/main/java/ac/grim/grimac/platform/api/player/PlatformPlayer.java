@@ -32,6 +32,8 @@ public interface PlatformPlayer extends GrimEntity, OfflinePlatformPlayer {
 
     void setGameMode(GameMode gameMode);
 
+    void resetFallDistance();
+
     boolean isExternalPlayer();
 
     // Vanish plugins hide staff through the platform's own visibility API. Platforms without one see everyone.
