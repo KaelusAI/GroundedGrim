@@ -656,7 +656,7 @@ public class GrimPlayer implements GrimUser {
                 this.noModifyPacketPermission = noModifyPacketPermission;
                 boolean gainedNoSpoof = noSpoofPermission && !this.noSpoofPermission;
                 this.noSpoofPermission = noSpoofPermission;
-                // Field first: the replay passes through our own pre-via listener, which reads it.
+                PacketInfoSpoof.setNoSpoof(user, noSpoofPermission);
                 if (gainedNoSpoof) PacketInfoSpoof.replayRealScores(user);
                 this.noSetbackPermission = noSetbackPermission;
                 this.disableGrim = disabledPermission;

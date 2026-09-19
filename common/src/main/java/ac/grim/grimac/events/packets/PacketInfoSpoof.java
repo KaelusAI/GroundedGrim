@@ -113,6 +113,8 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
     private static final Set<UUID> silencedTeams = ConcurrentHashMap.newKeySet();
     // Scores rewritten before a viewer's permissions resolved; replayed real once grim.nospoof shows up.
     private static final Map<UUID, Map<String, RealScore>> realScores = new ConcurrentHashMap<>();
+    // Kept outside GrimPlayer: grim.exempt drops the player from tracking, and the flag must outlive that.
+    private static final Set<UUID> noSpoof = ConcurrentHashMap.newKeySet();
 
     private static final EnchantmentType DECOY_ENCHANTMENT = EnchantmentTypes.UNBREAKING;
 
@@ -192,8 +194,15 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
 
     // A viewer who is not being lied to sees the real world, including in their own command completion.
     public static boolean spoofExempt(User user) {
-        GrimPlayer receiver = GrimAPI.INSTANCE.getPlayerDataManager().getPlayer(user);
-        return receiver != null && receiver.noSpoofPermission;
+        UUID uuid = user.getUUID();
+        return uuid != null && noSpoof.contains(uuid);
+    }
+
+    public static void setNoSpoof(User user, boolean exempt) {
+        UUID uuid = user.getUUID();
+        if (uuid == null) return;
+        if (exempt) noSpoof.add(uuid);
+        else noSpoof.remove(uuid);
     }
 
     @Override
@@ -549,6 +558,7 @@ public class PacketInfoSpoof extends PacketListenerAbstract {
     public void onUserDisconnect(UserDisconnectEvent event) {
         UUID uuid = event.getUser().getUUID();
         if (uuid == null) return;
+        noSpoof.remove(uuid);
         silenced.remove(uuid);
         silencedTeams.remove(uuid);
         peakHealth.remove(uuid);
