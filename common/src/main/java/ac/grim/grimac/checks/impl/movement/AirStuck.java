@@ -11,7 +11,6 @@ import ac.grim.grimac.utils.math.Vector3dm;
 import ac.grim.grimac.utils.nmsutil.Collisions;
 import ac.grim.grimac.utils.nmsutil.GetBoundingBox;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
-import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 
@@ -47,18 +46,14 @@ public class AirStuck extends Check implements PacketReceiveListener {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!enabled) return;
 
-        // A server teleport - ender pearl above all - drops the player somewhere the anchor knows nothing
-        // about. Without this the stale timer fires on the first packet after the pearl and yanks them down.
-        if (event.getPacketType() == PacketType.Play.Client.TELEPORT_CONFIRM) {
-            lastPositionTime = System.currentTimeMillis();
-            anchorX = Double.NaN;
-            return;
-        }
-
         if (WrapperPlayClientPlayerFlying.isFlying(event.getPacketType())) {
+            if (player.packetStateData.lastPacketWasTeleport) {
+                lastPositionTime = System.currentTimeMillis();
+                anchorX = Double.NaN;
+                return;
+            }
             WrapperPlayClientPlayerFlying flying = new WrapperPlayClientPlayerFlying(event);
             if (flying.hasPositionChanged()) {
-                // Anchor-relative: micro-jitter alternation between two positions defeats per-packet diff
                 double x = flying.getLocation().getX();
                 double y = flying.getLocation().getY();
                 double z = flying.getLocation().getZ();
