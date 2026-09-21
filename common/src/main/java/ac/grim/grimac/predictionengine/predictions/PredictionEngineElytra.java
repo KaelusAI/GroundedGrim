@@ -26,7 +26,8 @@ public class PredictionEngineElytra extends PredictionEngine {
         // Mojang changed from using their math to using regular java math in 1.18.2 elytra movement
         double vertCosRotation = player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_18_2) ? Math.cos(pitchRadians) : player.trigHandler.cos(pitchRadians);
         vertCosRotation = vertCosRotation * vertCosRotation * Math.min(1.0D, length / 0.4D);
-        if (player.getClientVersion().isOlderThanOrEquals(ClientVersion.V_1_16_4)) {
+        // 1.18.2 dropped the float this was kept in, in the same change that switched to java math above
+        if (player.getClientVersion().isOlderThan(ClientVersion.V_1_18_2)) {
             vertCosRotation = (float) vertCosRotation;
         }
 
