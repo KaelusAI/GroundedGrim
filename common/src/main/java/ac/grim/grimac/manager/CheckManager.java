@@ -30,6 +30,7 @@ import ac.grim.grimac.checks.impl.misc.Post;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
 import ac.grim.grimac.checks.impl.combat.FreezeAttack;
 import ac.grim.grimac.checks.impl.movement.AirStuck;
+import ac.grim.grimac.checks.impl.movement.BlockFlyGhost;
 import ac.grim.grimac.checks.impl.movement.NoSlow;
 import ac.grim.grimac.checks.impl.movement.PredictionRunner;
 import ac.grim.grimac.checks.impl.movement.SetbackBlocker;
@@ -204,6 +205,7 @@ public class CheckManager implements BasicReloadable {
                 .put(PacketOrderL.class, new PacketOrderL(player))
                 .put(PacketOrderM.class, new PacketOrderM(player))
                 .put(GroundSpoof.class, new GroundSpoof(player))
+                .put(BlockFlyGhost.class, new BlockFlyGhost(player))
                 .put(OffsetHandler.class, new OffsetHandler(player))
                 .put(SuperDebug.class, new SuperDebug(player))
                 .put(DebugHandler.class, new DebugHandler(player))

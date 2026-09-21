@@ -38,6 +38,14 @@ Punishments:
       - "1:1 [alert]"
       - "1:1 [log]"
       - "3:0 [webhook]"
+  BlockFlyGhostAlert:
+    remove-violations-after: 300
+    checks:
+      - "BlockFlyGhost"
+    commands:
+      - "1:1 [alert]"
+      - "1:1 [log]"
+      - "3:0 [webhook]"
   CrashBan:
     remove-violations-after: 300
     checks:

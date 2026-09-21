@@ -35,6 +35,7 @@ import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
 import com.github.retrooper.packetevents.protocol.world.states.defaulttags.BlockTags;
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType;
 import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.util.Vector3i;
 import com.viaversion.viaversion.api.Via;
 import lombok.RequiredArgsConstructor;
 
@@ -238,6 +239,9 @@ public class MovementTicker {
         }
 
         player.mainSupportingBlockData = MainSupportingBlockPosFinder.findMainSupportingBlockPos(player, player.mainSupportingBlockData, new Vector3d(collide.getX(), collide.getY(), collide.getZ()), player.boundingBox, player.onGround);
+        final Vector3i supportPos = player.mainSupportingBlockData.blockPos();
+        player.onlySupportedByUnconfirmedPlacement = player.onGround && supportPos != null
+                && player.compensatedWorld.isGhostSupport(supportPos);
         StateType onBlock = BlockProperties.getOnPos(player, player.mainSupportingBlockData, new Vector3d(player.x, player.y, player.z));
 
         // Hack with 1.14+ poses issue

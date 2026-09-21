@@ -36,6 +36,9 @@ checks:
   AirStuck:
     enabled: true   # experimental
     # tunables for this check currently live in config.yml (section: AirStuck)
+  BlockFlyGhost:
+    enabled: true   # experimental
+    # tunables for this check currently live in config.yml (section: BlockFlyGhost)
   NoSlow:
     enabled: true
     # tunables for this check currently live in config.yml (section: NoSlow)

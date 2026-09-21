@@ -267,6 +267,13 @@ public class CompensatedWorld implements PacketWorld {
         return new Chunk_v1_9(0, new DataPalette(new ListPalette(4), new LegacyFlexibleStorage(4, 4096), PaletteType.CHUNK));
     }
 
+    // The prediction retains the server block state until acknowledgement, even while the local block is solid.
+    public boolean isGhostSupport(Vector3i pos) {
+        BlockPrediction prediction = originalServerBlocks.get(pos.getSerializedPosition());
+        if (prediction == null) return false;
+        return WrappedBlockState.getByGlobalId(blockVersion, prediction.getOriginalBlockId()).getType().isAir();
+    }
+
     public void updateBlock(Vector3i pos, WrappedBlockState state) {
         updateBlock(pos.getX(), pos.getY(), pos.getZ(), state.getGlobalId());
     }
