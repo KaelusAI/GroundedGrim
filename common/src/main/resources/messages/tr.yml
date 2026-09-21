@@ -1,5 +1,5 @@
 # \u00BB eşittir » (çift >>), ANSI ve UTF-8 bunu farklı yorumlar. bu nedenle ? bile görebilirsiniz
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fUyarılar aktif edildi."
 alerts-disabled: "%prefix% &fUyarılar deaktif edildi."
@@ -42,8 +42,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - ihlal uyarıları
 # %verbose% - detaylı olarak verilen tüm uyarılar, checkler tüm bilgileri vermez
-alerts-format: "%prefix% &b%player% &fadlı oyuncuda &f(x&c%vl%&f) &fadet <hover:show_text:\"&b%check_name%%experimental%\n&8Açıklama: &f%description%\">&b%check_name%%experimental%</hover> &ftespit edildi: &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &b%player% &fadlı oyuncuda &f(x&c%vl%&f) &fadet <hover:show_text:\"&b%check_name%%experimental%\n&8Açıklama: &f%description%\">&b%check_name%%experimental%</hover> &ftespit edildi: &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8Sebep: &f%reason%"
+alerts-format: "%prefix% &b%player% &fadlı oyuncuda &f(x&c%vl%&f) &fadet <hover:show_text:\"&b%check_name%%experimental%\n&8Açıklama: &f%description%%reason%\">&b%check_name%%experimental%</hover> &ftespit edildi: &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &b%player% &fadlı oyuncuda &f(x&c%vl%&f) &fadet <hover:show_text:\"&b%check_name%%experimental%\n&8Açıklama: &f%description%%reason%\">&b%check_name%%experimental%</hover> &ftespit edildi: &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -110,7 +112,7 @@ grim-history-crashed-marker: " &8(&cçöktü&8)"
 #   %client_version% %client_brand% %duration% %timeago%
 #   %violations% %unique_checks% %bucket_size%
 grim-history-detail-header: "%prefix% &b&f%player% &boyuncusunun &f%ordinal% &bnumaralı oturum detayı:"
-grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, Sunucu: &f%server_name%&b, Süre: &f%duration%&b, Tarih: &7%timeago% önce"
+grim-history-detail-meta1: "%prefix% &bGroundedGrim: &f%grim_version%&b, Sunucu: &f%server_name%&b, Süre: &f%duration%&b, Tarih: &7%timeago% önce"
 grim-history-detail-meta2: "%prefix% &bİstemci: &f%client_version%&b, Marka: &f%client_brand%"
 grim-history-detail-violations-header: "%prefix% &bİhlaller: &8(toplam %violations%, benzersiz %unique_checks%)"
 grim-history-detail-empty: "%prefix% &7- (yok)"
@@ -132,4 +134,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # Şema işaretçileri — bkz. config.yml'deki başlık yorumu.
 config-flavor: V2
-config-version: 2
+config-version: 3

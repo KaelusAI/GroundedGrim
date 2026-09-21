@@ -1,5 +1,5 @@
 # \u00BB é » (>> duplo), ANSI e UTF-8 interpretam isso diferentemente... você pode acabar vendo '?' por conta disso.
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertas habilitados."
 alerts-disabled: "%prefix% &fAlertas desabilitados."
@@ -41,8 +41,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - violações
 # %verbose% - Informação extra da verificação, como os desalinhamentos, nem todas as verifiações terão essa informação.
-alerts-format: "%prefix% &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8Motivo: &f%reason%"
+alerts-format: "%prefix% &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bfalhou em <hover:show_text:\"&b%check_name%%experimental%\n&8Descrição: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 profile:
     - "&7======================"
@@ -109,7 +111,7 @@ grim-history-crashed-marker: " &8(&cqueda&8)"
 #   %client_version% %client_brand% %duration% %timeago%
 #   %violations% %unique_checks% %bucket_size%
 grim-history-detail-header: "%prefix% &bDetalhe da sessão &f%ordinal% &bde &f%player%&b:"
-grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, Servidor: &f%server_name%&b, Duração: &f%duration%&b, Data: &7há %timeago%"
+grim-history-detail-meta1: "%prefix% &bGroundedGrim: &f%grim_version%&b, Servidor: &f%server_name%&b, Duração: &f%duration%&b, Data: &7há %timeago%"
 grim-history-detail-meta2: "%prefix% &bCliente: &f%client_version%&b, Marca: &f%client_brand%"
 grim-history-detail-violations-header: "%prefix% &bViolações: &8(%violations% no total, %unique_checks% únicas)"
 grim-history-detail-empty: "%prefix% &7- (nenhuma)"
@@ -131,4 +133,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # Marcadores de esquema — ver o comentário do cabeçalho em config.yml.
 config-flavor: V2
-config-version: 2
+config-version: 3

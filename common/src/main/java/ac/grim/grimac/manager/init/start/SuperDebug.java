@@ -2,6 +2,9 @@ package ac.grim.grimac.manager.init.start;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.checks.GrimProcessor;
+import ac.grim.grimac.api.config.ConfigManager;
+import ac.grim.grimac.checks.impl.prediction.DebugHandler;
+import ac.grim.grimac.checks.impl.prediction.OffsetHandler;
 import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.UncertaintyHandler;
@@ -20,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,6 +87,8 @@ public final class SuperDebug extends GrimProcessor implements PostPredictionLis
         sb.append(player.getTransactionPing());
         sb.append("ms\n\n");
 
+        appendVerdict(sb, predictionComplete);
+
         for (int i = 0; i < predicted.size(); i++) {
             VectorData predict = predicted.get(i);
             Vector3dm actual = actually.get(i);
@@ -94,18 +100,19 @@ public final class SuperDebug extends GrimProcessor implements PostPredictionLis
         }
 
         UncertaintyHandler uncertaintyHandler = player.uncertaintyHandler;
+        sb.append("Base per-axis uncertainty (included in candidate bounds)\n");
         sb.append("XNeg: ");
-        sb.append(uncertaintyHandler.xNegativeUncertainty);
+        sb.append(uncertaintyHandler.predictedXNegative);
         sb.append("\nXPos: ");
-        sb.append(uncertaintyHandler.xPositiveUncertainty);
+        sb.append(uncertaintyHandler.predictedXPositive);
         sb.append("\nYNeg: ");
-        sb.append(uncertaintyHandler.yNegativeUncertainty);
+        sb.append(uncertaintyHandler.predictedYNegative);
         sb.append("\nYPos: ");
-        sb.append(uncertaintyHandler.yPositiveUncertainty);
+        sb.append(uncertaintyHandler.predictedYPositive);
         sb.append("\nZNeg: ");
-        sb.append(uncertaintyHandler.zNegativeUncertainty);
+        sb.append(uncertaintyHandler.predictedZNegative);
         sb.append("\nZPos: ");
-        sb.append(uncertaintyHandler.zPositiveUncertainty);
+        sb.append(uncertaintyHandler.predictedZPositive);
         sb.append("\nStuck: ");
         sb.append(uncertaintyHandler.stuckOnEdge.hasOccurredSince(1));
         sb.append("\n\n0.03: ");
@@ -193,6 +200,64 @@ public final class SuperDebug extends GrimProcessor implements PostPredictionLis
         flags[predictionComplete.getIdentifier() - 1] = sb;
         continuedDebug.put(sb, 40);
     }
+
+    private void appendVerdict(StringBuilder sb, PredictionComplete predictionComplete) {
+        ConfigManager config = GrimAPI.INSTANCE.getConfigManager().getConfig();
+        UncertaintyHandler uncertainty = player.uncertaintyHandler;
+        double offset = predictionComplete.getOffset();
+        double threshold = config.getDoubleElse("Simulation.threshold", 0.001);
+        double immediate = config.getDoubleElse("Simulation.immediate-setback-threshold", 0.1);
+        double maxAdvantage = config.getDoubleElse("Simulation.max-advantage", 1);
+
+        sb.append("Prediction\n");
+        sb.append("Offset ").append(offset).append(", threshold ").append(threshold);
+        sb.append(" (").append(GrimMath.floor(offset / threshold)).append("x)\n");
+        sb.append(String.format(java.util.Locale.ROOT, "Missed by x%+.6f y%+.6f z%+.6f\n", uncertainty.offsetX, uncertainty.offsetY, uncertainty.offsetZ));
+        sb.append("Raw distance ").append(uncertainty.rawOffset);
+        String reduction = uncertainty.describeReduction();
+        sb.append(reduction.isEmpty() ? " (no reduction)" : ", reduced by " + reduction);
+        sb.append("\nSetback threshold (execution not recorded): ");
+        if (offset >= immediate) {
+            sb.append("immediate offset reached ").append(immediate);
+        } else {
+            sb.append("accumulated advantage limit ").append(maxAdvantage);
+        }
+
+        VectorData predict = player.predictedVelocity;
+        sb.append("\nMovement branch: ");
+        String branch = OffsetHandler.describeBranch(predict);
+        sb.append(branch.isEmpty() ? "plain movement" : branch);
+        sb.append("\nCandidate velocity: ").append(uncertainty.describeCandidate());
+        sb.append("\nPrediction stages: ").append(uncertainty.describeBuild(predict.vector));
+        sb.append(String.format(Locale.ROOT, "\nLook: yaw %.5f pitch %.5f%s",
+                player.yaw, player.pitch, Math.abs(player.pitch) > 90 ? " (pitch outside [-90, 90])" : ""));
+        sb.append(String.format(Locale.ROOT, "\nMovement: %.5f %.5f %.5f  to  %.5f %.5f %.5f",
+                player.lastX, player.lastY, player.lastZ, player.x, player.y, player.z));
+        sb.append(String.format(Locale.ROOT, "\nCurrent bounding box: %.5f..%.5f %.5f..%.5f %.5f..%.5f",
+                player.boundingBox.minX, player.boundingBox.maxX, player.boundingBox.minY,
+                player.boundingBox.maxY, player.boundingBox.minZ, player.boundingBox.maxZ));
+        sb.append("\nPhysics: ").append(String.format(java.util.Locale.ROOT,
+                "speed %.5f friction %.5f gravity %.5f", player.speed, player.friction, player.gravity));
+        sb.append("\nClient input: ").append(DebugHandler.describeInput(player));
+        sb.append("\nRaw candidate chain (includes unconditional types): ").append(describeChain(predict));
+
+        sb.append("\n\nUncertainty\n");
+        String box = uncertainty.describeBox();
+        sb.append("Candidate bounds: ").append(box.isEmpty() ? "base size" : box);
+        String reasons = uncertainty.describeSources();
+        sb.append("\nSources: ").append(reasons.isEmpty() ? "none" : reasons);
+        sb.append("\n\n");
+    }
+
+    private String describeChain(VectorData data) {
+        StringBuilder chain = new StringBuilder();
+        for (VectorData step = data; step != null; step = step.lastVector) {
+            if (chain.length() > 0) chain.insert(0, " -> ");
+            chain.insert(0, step.vectorType);
+        }
+        return chain.toString();
+    }
+
 
     private void appendDebug(StringBuilder sb, VectorData predict, Vector3dm actual, Location location, Vector3dm startTick, Vector3dm addition, Vector3dm water) {
         if (predict.isZeroPointZeroThree()) {

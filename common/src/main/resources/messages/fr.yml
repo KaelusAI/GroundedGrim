@@ -1,5 +1,5 @@
 # \u00BB se traduit par » (double >>). Les interprétations diffèrent entre les normes ANSI et UTF-8... vous pouvez même voir ? en raison de cela
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fAlertes activées"
 alerts-disabled: "%prefix% &fAlertes désactivées"
@@ -42,8 +42,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - violations
 # %verbose% - Informations supplémentaires sur les vérifivations comme les écarts, toutes les vérifications n'ajoutent pas d'information
-alerts-format: "%prefix% &f%player% &ba échoué <hover:show_text:\"&b%check_name%%experimental%\n&8Description: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &ba échoué <hover:show_text:\"&b%check_name%%experimental%\n&8Description: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8Raison: &f%reason%"
+alerts-format: "%prefix% &f%player% &ba échoué <hover:show_text:\"&b%check_name%%experimental%\n&8Description: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &ba échoué <hover:show_text:\"&b%check_name%%experimental%\n&8Description: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -133,4 +135,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # Marqueurs de schéma — voir le commentaire d'en-tête dans config.yml.
 config-flavor: V2
-config-version: 2
+config-version: 3

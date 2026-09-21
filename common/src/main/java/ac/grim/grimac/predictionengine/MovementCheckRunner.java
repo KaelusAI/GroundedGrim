@@ -571,9 +571,17 @@ public class MovementCheckRunner extends GrimProcessor {
             }
         } // If it isn't any of these cases, the player is on a mob they can't control and therefore is exempt
 
-        // No, don't comment about the sqrt call.  It doesn't matter unless you run sqrt thousands of times a second.
-        double offset = player.predictedVelocity.vector.distance(player.actualMovement);
+        final Vector3dm predictedVec = player.predictedVelocity.vector;
+        final double missX = player.actualMovement.getX() - predictedVec.getX();
+        final double missY = player.actualMovement.getY() - predictedVec.getY();
+        final double missZ = player.actualMovement.getZ() - predictedVec.getZ();
+        double offset = Math.sqrt(missX * missX + missY * missY + missZ * missZ);
+        player.uncertaintyHandler.rawOffset = offset;
+        player.uncertaintyHandler.offsetX = missX;
+        player.uncertaintyHandler.offsetY = missY;
+        player.uncertaintyHandler.offsetZ = missZ;
         offset = player.uncertaintyHandler.reduceOffset(offset);
+        player.uncertaintyHandler.offsetReduction = player.uncertaintyHandler.rawOffset - offset;
 
         if (player.packetStateData.tryingToRiptide != clientClaimsRiptide) {
             player.getSetbackTeleportUtil().executeForceResync(); // Could technically be lag due to packet timings.

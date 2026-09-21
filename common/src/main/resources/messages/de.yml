@@ -1,4 +1,4 @@
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fBenachrichtigungen aktiviert"
 alerts-disabled: "%prefix% &fBenachrichtigungen deaktiviert"
@@ -41,8 +41,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - Verstöße
 # %verbose% - zusätzliche Informationen von der Prüfung, nicht alle Prüfungen liefern zusätzliche Informationen
-alerts-format: "%prefix% &f%player% &bbestand <hover:show_text:\"&b%check_name%%experimental%\n&8Beschreibung: &f%description%\">&f%check_name%%experimental%</hover> &bnicht &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bbestand <hover:show_text:\"&b%check_name%%experimental%\n&8Beschreibung: &f%description%\">&f%check_name%%experimental%</hover> &bnicht &f(x&c%vl%&f) &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8Grund: &f%reason%"
+alerts-format: "%prefix% &f%player% &bbestand <hover:show_text:\"&b%check_name%%experimental%\n&8Beschreibung: &f%description%%reason%\">&f%check_name%%experimental%</hover> &bnicht &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bbestand <hover:show_text:\"&b%check_name%%experimental%\n&8Beschreibung: &f%description%%reason%\">&f%check_name%%experimental%</hover> &bnicht &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -109,7 +111,7 @@ grim-history-crashed-marker: " &8(&cabgestürzt&8)"
 #   %client_version% %client_brand% %duration% %timeago%
 #   %violations% %unique_checks% %bucket_size%
 grim-history-detail-header: "%prefix% &bDetails zu Sitzung &f%ordinal% &bvon &f%player%&b:"
-grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, Server: &f%server_name%&b, Dauer: &f%duration%&b, Datum: &7vor %timeago%"
+grim-history-detail-meta1: "%prefix% &bGroundedGrim: &f%grim_version%&b, Server: &f%server_name%&b, Dauer: &f%duration%&b, Datum: &7vor %timeago%"
 grim-history-detail-meta2: "%prefix% &bClient: &f%client_version%&b, Marke: &f%client_brand%"
 grim-history-detail-violations-header: "%prefix% &bVerstöße: &8(%violations% gesamt, %unique_checks% verschiedene)"
 grim-history-detail-empty: "%prefix% &7- (keine)"
@@ -131,4 +133,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # Schema-Marker — siehe Kopf-Kommentar in config.yml.
 config-flavor: V2
-config-version: 2
+config-version: 3

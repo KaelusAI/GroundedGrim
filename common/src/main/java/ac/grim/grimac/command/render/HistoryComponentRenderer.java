@@ -197,7 +197,7 @@ public final class HistoryComponentRenderer {
         out.add(parse(sender, cfg, "grim-history-detail-header",
                 "%prefix% &bShowing &f%player%&b's session &f%ordinal%&b details:", metaVars).component());
         out.add(parse(sender, cfg, "grim-history-detail-meta1",
-                "&bGrim: &f%grim_version%&b, Server: &f%server_name%&b, Duration: &f%duration%&b, Date: &7%timeago% ago",
+                "&bGroundedGrim: &f%grim_version%&b, Server: &f%server_name%&b, Duration: &f%duration%&b, Date: &7%timeago% ago",
                 metaVars).component());
         out.add(parse(sender, cfg, "grim-history-detail-meta2",
                 "&bClient: &f%client_version%&b, Brand: &f%client_brand%",

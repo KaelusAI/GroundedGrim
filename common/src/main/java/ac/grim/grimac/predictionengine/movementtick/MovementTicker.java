@@ -310,6 +310,13 @@ public class MovementTicker {
             livingEntityTravel();
         }
 
+        player.uncertaintyHandler.predictedXNegative = player.uncertaintyHandler.xNegativeUncertainty;
+        player.uncertaintyHandler.predictedXPositive = player.uncertaintyHandler.xPositiveUncertainty;
+        player.uncertaintyHandler.predictedYNegative = player.uncertaintyHandler.yNegativeUncertainty;
+        player.uncertaintyHandler.predictedYPositive = player.uncertaintyHandler.yPositiveUncertainty;
+        player.uncertaintyHandler.predictedZNegative = player.uncertaintyHandler.zNegativeUncertainty;
+        player.uncertaintyHandler.predictedZPositive = player.uncertaintyHandler.zPositiveUncertainty;
+
         player.uncertaintyHandler.xNegativeUncertainty = 0;
         player.uncertaintyHandler.xPositiveUncertainty = 0;
         player.uncertaintyHandler.yNegativeUncertainty = 0;

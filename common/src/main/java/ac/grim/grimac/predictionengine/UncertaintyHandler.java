@@ -17,7 +17,9 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.world.BlockFace;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.List;
 
 public class UncertaintyHandler {
@@ -41,6 +43,9 @@ public class UncertaintyHandler {
     public double zPositiveUncertainty = 0;
     public double yNegativeUncertainty = 0;
     public double yPositiveUncertainty = 0;
+
+    // Snapshot for post-prediction diagnostics: travel resets the live fields for the next tick.
+    public double predictedXNegative, predictedXPositive, predictedYNegative, predictedYPositive, predictedZNegative, predictedZPositive;
     // Slime block bouncing
     public double thisTickSlimeBlockUncertainty = 0;
     public double nextTickSlimeBlockUncertainty = 0;
@@ -100,6 +105,52 @@ public class UncertaintyHandler {
     public double lastHorizontalOffset = 0;
     public double lastVerticalOffset = 0;
     public EntityPushSimulator.PushRange pushRange = new EntityPushSimulator.PushRange();
+
+    // Magnitudes recorded for the selected candidate rank sources; they do not sum to the box bounds.
+    public static final String[] BOX_TERMS = {
+            "0.03 horizontal", "0.03 vertical", "previous offset", "flight toggle", "underwater flight",
+            "flying tolerance", "glide launch", "glide toggle", "hard entity", "piston", "knockback resync",
+            "fluid push", "entity push"
+    };
+    public static final int TERM_POINT_THREE_H = 0, TERM_POINT_THREE_V = 1, TERM_LAST_OFFSET = 2,
+            TERM_FLIGHT_TOGGLE = 3, TERM_UNDERWATER_FLIGHT = 4, TERM_FLYING = 5, TERM_GLIDE_LAUNCH = 6,
+            TERM_GLIDE_TOGGLE = 7, TERM_HARD_ENTITY = 8, TERM_PISTON = 9, TERM_KB_RESYNC = 10,
+            TERM_FLUID = 11, TERM_ENTITY_PUSH = 12;
+
+    // These operations can overwrite earlier bounds, so diagnostics record names without magnitudes.
+    public static final String[] BOX_MUTATORS = {
+            "landing within 0.03", "elytra ground contact", "hidden gravity", "vertical fluid", "bubble column",
+            "unpredictable gravity", "slime bounce", "swim hop", "levitation", "sneaking", "fireworks",
+            "fishing rod", "block edge or slime", "hard entity collapse", "vehicle friction", "vehicle switch",
+            "piston override", "shulker clamp (narrows)"
+    };
+    public static final int BOX_LANDING = 1, BOX_ELYTRA_GROUND = 1 << 1, BOX_HIDDEN_GRAVITY = 1 << 2,
+            BOX_VERTICAL_FLUID = 1 << 3, BOX_BUBBLE = 1 << 4, BOX_UNKNOWN_GRAVITY = 1 << 5, BOX_SLIME = 1 << 6,
+            BOX_SWIM_HOP = 1 << 7, BOX_LEVITATION = 1 << 8, BOX_SNEAKING = 1 << 9, BOX_FIREWORKS = 1 << 10,
+            BOX_FISHING_ROD = 1 << 11, BOX_EDGE_OR_SLIME = 1 << 12, BOX_HARD_ENTITY_COLLAPSE = 1 << 13,
+            BOX_VEHICLE_FRICTION = 1 << 14, BOX_VEHICLE_SWITCH = 1 << 15, BOX_PISTON_OVERRIDE = 1 << 16,
+            BOX_SHULKER = 1 << 17;
+
+    // PointThreeEstimator reuses scratch before candidate selection; pending preserves the candidate's data.
+    public final double[] boxTermScratch = new double[BOX_TERMS.length];
+    private final double[] boxTermPending = new double[BOX_TERMS.length];
+    public final double[] boxTermBest = new double[BOX_TERMS.length];
+    public int boxMutatorScratch;
+    private int boxMutatorPending;
+    public int boxMutatorBest;
+    private final double[] boxBoundsScratch = new double[6];
+    private final double[] boxBoundsPending = new double[6];
+    private final double[] boxBoundsBest = new double[6];
+
+    // Candidate XYZ followed by XYZ after uncertainty, before collisions.
+    private final double[] buildPending = new double[6];
+    private final double[] buildBest = new double[6];
+
+    public double rawOffset, offsetX, offsetY, offsetZ, offsetReduction;
+    public int offsetReductionMask;
+    public static final String[] OFFSET_REDUCTIONS = {
+            "hard entity", "firework in water", "glitchy block", "bouncy block", "vehicle boost"
+    };
 
     public UncertaintyHandler(GrimPlayer player) {
         this.player = player;
@@ -290,9 +341,11 @@ public class UncertaintyHandler {
         // Yes, they have caused an insane amount of uncertainty!
         // Even 1 block offset reduction isn't enough... damn it mojang
         boolean isElytraFlight = player.isGliding && player.wasGliding;
+        offsetReductionMask = 0;
 
         if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(3)) {
             offset -= isElytraFlight ? 0.3 : 1.2;
+            offsetReductionMask |= 1;
         }
 
         // Keep the water firework leniency for a few ticks AFTER leaving water: the up/down-through-water
@@ -300,22 +353,27 @@ public class UncertaintyHandler {
         if (player.uncertaintyHandler.lastTouchingWater.hasOccurredSince(3) && (player.isGliding || player.wasGliding)
                 && player.fireworks.getMaxFireworksAppliedPossible() > 0) {
             offset -= 0.05;
+            offsetReductionMask |= 1 << 1;
         }
 
         if (player.uncertaintyHandler.isOrWasNearGlitchyBlock) {
             offset -= isElytraFlight ? 0.05 : 0.25;
+            offsetReductionMask |= 1 << 2;
         }
 
         // This is a section where I hack around current issues with Grim itself...
         if (player.uncertaintyHandler.influencedByBouncyBlock() && (!player.isPointThree() || player.inVehicle())) {
             offset -= 0.03;
+            offsetReductionMask |= 1 << 3;
         }
         // This is the end of that section.
 
         // I can't figure out how the client exactly tracks boost time
         if (player.compensatedEntities.self.getRiding() instanceof PacketEntityRideable vehicle) {
-            if (vehicle.currentBoostTime < vehicle.boostTimeMax + 20)
+            if (vehicle.currentBoostTime < vehicle.boostTimeMax + 20) {
                 offset -= 0.01;
+                offsetReductionMask |= 1 << 4;
+            }
         }
 
         return Math.max(0, offset);
@@ -371,4 +429,106 @@ public class UncertaintyHandler {
         }
         return false;
     }
+    public void beginBoxTerms() {
+        Arrays.fill(boxTermScratch, 0);
+        boxMutatorScratch = 0;
+    }
+
+    public void recordBoxBounds(Vector3dm candidate, Vector3dm min, Vector3dm max) {
+        boxBoundsScratch[0] = min.getX() - candidate.getX();
+        boxBoundsScratch[1] = min.getY() - candidate.getY();
+        boxBoundsScratch[2] = min.getZ() - candidate.getZ();
+        boxBoundsScratch[3] = max.getX() - candidate.getX();
+        boxBoundsScratch[4] = max.getY() - candidate.getY();
+        boxBoundsScratch[5] = max.getZ() - candidate.getZ();
+    }
+
+    public void stashBoxTerms(Vector3dm candidate, Vector3dm afterBox) {
+        System.arraycopy(boxTermScratch, 0, boxTermPending, 0, boxTermScratch.length);
+        System.arraycopy(boxBoundsScratch, 0, boxBoundsPending, 0, boxBoundsScratch.length);
+        boxMutatorPending = boxMutatorScratch;
+        buildPending[0] = candidate.getX();
+        buildPending[1] = candidate.getY();
+        buildPending[2] = candidate.getZ();
+        buildPending[3] = afterBox.getX();
+        buildPending[4] = afterBox.getY();
+        buildPending[5] = afterBox.getZ();
+    }
+
+    public void commitBoxTerms() {
+        System.arraycopy(boxTermPending, 0, boxTermBest, 0, boxTermPending.length);
+        System.arraycopy(boxBoundsPending, 0, boxBoundsBest, 0, boxBoundsPending.length);
+        System.arraycopy(buildPending, 0, buildBest, 0, buildPending.length);
+        boxMutatorBest = boxMutatorPending;
+    }
+
+    public String describeCandidate() {
+        return String.format(Locale.ROOT, "x%+.6f y%+.6f z%+.6f", buildBest[0], buildBest[1], buildBest[2]);
+    }
+
+    public String describeBuild(Vector3dm predicted) {
+        return String.format(Locale.ROOT,
+                "slack moved x%+.4f y%+.4f z%+.4f, collision x%+.4f y%+.4f z%+.4f",
+                buildBest[3] - buildBest[0], buildBest[4] - buildBest[1], buildBest[5] - buildBest[2],
+                predicted.getX() - buildBest[3], predicted.getY() - buildBest[4], predicted.getZ() - buildBest[5]);
+    }
+
+    // Bounds relative to the selected candidate. Empty when all bounds are zero.
+    public String describeBox() {
+        for (double bound : boxBoundsBest) {
+            if (bound != 0) {
+                return String.format(Locale.ROOT, "x%+.4f/%+.4f y%+.4f/%+.4f z%+.4f/%+.4f",
+                        boxBoundsBest[0], boxBoundsBest[3], boxBoundsBest[1], boxBoundsBest[4],
+                        boxBoundsBest[2], boxBoundsBest[5]);
+            }
+        }
+        return "";
+    }
+
+    public String describeSources() {
+        return describeSources(Integer.MAX_VALUE);
+    }
+
+    public String describeSources(int limit) {
+        StringBuilder out = new StringBuilder();
+        boolean[] taken = new boolean[boxTermBest.length];
+        int printed = 0;
+
+        while (printed < limit) {
+            int best = -1;
+            for (int i = 0; i < boxTermBest.length; i++) {
+                if (taken[i] || boxTermBest[i] <= 0) continue;
+                if (best == -1 || boxTermBest[i] > boxTermBest[best]) best = i;
+            }
+            if (best == -1) break;
+            taken[best] = true;
+            if (out.length() > 0) out.append(", ");
+            out.append(BOX_TERMS[best]).append(String.format(Locale.ROOT, " +%.4f", boxTermBest[best]));
+            printed++;
+        }
+
+        for (int i = 0; i < BOX_MUTATORS.length && printed < limit; i++) {
+            if ((boxMutatorBest & (1 << i)) == 0) continue;
+            if (out.length() > 0) out.append(", ");
+            out.append(BOX_MUTATORS[i]);
+            printed++;
+        }
+
+        return out.toString();
+    }
+
+    // Axis offsets remain raw; reduceOffset adjusts only the vector magnitude.
+    public String describeReduction() {
+        if (offsetReduction <= 0) return "";
+        StringBuilder out = new StringBuilder(String.format(Locale.ROOT, "-%.4f", offsetReduction));
+        boolean first = true;
+        for (int i = 0; i < OFFSET_REDUCTIONS.length; i++) {
+            if ((offsetReductionMask & (1 << i)) == 0) continue;
+            out.append(first ? " (" : ", ").append(OFFSET_REDUCTIONS[i]);
+            first = false;
+        }
+        if (!first) out.append(')');
+        return out.toString();
+    }
+
 }

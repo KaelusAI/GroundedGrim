@@ -24,6 +24,10 @@ import java.util.function.Supplier;
 // Class from https://github.com/Tecnio/AntiCheatBase/blob/master/src/main/java/me/tecnio/anticheat/check/Check.java
 @Getter
 public class Check extends GrimProcessor implements AbstractCheck {
+
+    public String getAlertReason() {
+        return "";
+    }
     private static final FlagEvent.Channel FLAG_CHANNEL = GrimAPI.INSTANCE.getEventBus().get(FlagEvent.class);
     private static final ThreadLocal<VerboseBuf> VERBOSE = ThreadLocal.withInitial(VerboseBuf::new);
 

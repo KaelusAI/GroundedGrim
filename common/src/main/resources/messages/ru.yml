@@ -1,5 +1,5 @@
 # \u00BB это " (двойной >>), ANSI и UTF-8 интерпретируют это по-разному... вы можете даже увидеть "?" из-за этого
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fОповещения включены"
 alerts-disabled: "%prefix% &fОповещения отключены"
@@ -42,8 +42,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - нарушения
 # %verbose% - дополнительная информация от проверки, например, смещения, не все проверки добавляют информацию.
-alerts-format: "%prefix% &f%player% &bпровалил <hover:show_text:\"&b%check_name%%experimental%\n&8Описание: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bпровалил <hover:show_text:\"&b%check_name%%experimental%\n&8Описание: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+# %reason% - в чём именно чек сомневался в момент срабатывания, у большинства чеков пусто
+alerts-reason-format: "\n&8Причина: &f%reason%"
+alerts-format: "%prefix% &f%player% &bпровалил <hover:show_text:\"&b%check_name%%experimental%\n&8Описание: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &bпровалил <hover:show_text:\"&b%check_name%%experimental%\n&8Описание: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -111,7 +113,7 @@ grim-history-crashed-marker: " &8(&cкраш&8)"
 #   %client_version% %client_brand% %duration% %timeago%
 #   %violations% %unique_checks% %bucket_size%
 grim-history-detail-header: "%prefix% &bДетали сессии &f%ordinal% &bигрока &f%player%&b:"
-grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, сервер: &f%server_name%&b, длительность: &f%duration%&b, дата: &7%timeago% назад"
+grim-history-detail-meta1: "%prefix% &bGroundedGrim: &f%grim_version%&b, сервер: &f%server_name%&b, длительность: &f%duration%&b, дата: &7%timeago% назад"
 grim-history-detail-meta2: "%prefix% &bКлиент: &f%client_version%&b, бренд: &f%client_brand%"
 grim-history-detail-violations-header: "%prefix% &bНарушения: &8(всего %violations%, уникальных %unique_checks%)"
 grim-history-detail-empty: "%prefix% &7- (нет)"
@@ -133,4 +135,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # Маркеры схемы — см. шапку config.yml.
 config-flavor: V2
-config-version: 2
+config-version: 3

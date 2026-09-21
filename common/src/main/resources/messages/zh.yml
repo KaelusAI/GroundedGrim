@@ -1,5 +1,5 @@
 # \u00BB 表示 » (相当于缩小版的 >>), ANSI和UTF-8的显示方式有所不同,有时你甚至可以看到乱码.
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &f警报 已开启"
 alerts-disabled: "%prefix% &f警报 已禁用"
@@ -42,8 +42,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental% - 检查是否是实验性
 # %vl% - VL值
 # %verbose% - 检查中的额外信息说明，例如偏移量，并非所有检查都会添加信息
-alerts-format: "%prefix% &f%player% &b触发了 <hover:show_text:\"&b%check_name%%experimental%\n&8描述: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &b触发了 <hover:show_text:\"&b%check_name%%experimental%\n&8描述: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8原因: &f%reason%"
+alerts-format: "%prefix% &f%player% &b触发了 <hover:show_text:\"&b%check_name%%experimental%\n&8描述: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cproxy&f] &f%player% &b触发了 <hover:show_text:\"&b%check_name%%experimental%\n&8描述: &f%description%%reason%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -128,4 +130,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # 模式标记 — 参见 config.yml 顶部的注释。
 config-flavor: V2
-config-version: 2
+config-version: 3

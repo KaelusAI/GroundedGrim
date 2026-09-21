@@ -6,7 +6,9 @@ import ac.grim.grimac.checks.type.PostPredictionListener;
 import ac.grim.grimac.command.commands.GrimLog;
 import ac.grim.grimac.platform.api.sender.Sender;
 import ac.grim.grimac.player.GrimPlayer;
+import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.utils.anticheat.update.PredictionComplete;
+import ac.grim.grimac.utils.data.KnownInput;
 import ac.grim.grimac.utils.lists.EvictingQueue;
 import ac.grim.grimac.utils.math.Vector3dm;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -15,6 +17,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -165,9 +168,18 @@ public class DebugHandler extends AbstractDebugHandler implements PostPrediction
             o = o.append(Component.text(elytraState).color(NamedTextColor.AQUA));
         }
 
+        String uncertaintyLine = isFlag ? describeUncertainty() : "";
+        String causeLine = isFlag ? describeCause() : "";
+        Component u = uncertaintyLine.isEmpty() ? null
+                : Component.text(uncertaintyLine).color(NamedTextColor.DARK_AQUA);
+        Component w = causeLine.isEmpty() ? null
+                : Component.text(causeLine).color(NamedTextColor.DARK_PURPLE);
+
         String plainLine = "P: " + predicted.getX() + " " + predicted.getY() + " " + predicted.getZ()
                 + " | A: " + actually.getX() + " " + actually.getY() + " " + actually.getZ()
-                + " | O: " + offset + elytraState;
+                + " | O: " + offset + elytraState
+                + (uncertaintyLine.isEmpty() ? "" : "\n" + uncertaintyLine)
+                + (causeLine.isEmpty() ? "" : "\n" + causeLine);
         pasteBuffer.add(plainLine);
 
         String prefix = player.platformPlayer == null ? "null" : player.platformPlayer.getName() + " ";
@@ -181,6 +193,8 @@ public class DebugHandler extends AbstractDebugHandler implements PostPrediction
             listener.sendMessage(listenerPrefix.append(p));
             listener.sendMessage(listenerPrefix.append(a));
             listener.sendMessage(listenerPrefix.append(o));
+            if (u != null) listener.sendMessage(listenerPrefix.append(u));
+            if (w != null) listener.sendMessage(listenerPrefix.append(w));
         }
 
         listeners.removeIf(l -> l.platformPlayer != null && !l.platformPlayer.isOnline());
@@ -190,7 +204,52 @@ public class DebugHandler extends AbstractDebugHandler implements PostPrediction
             consoleSender.sendMessage(p);
             consoleSender.sendMessage(a);
             consoleSender.sendMessage(o);
+            if (u != null) consoleSender.sendMessage(u);
+            if (w != null) consoleSender.sendMessage(w);
         }
+    }
+
+    private String describeCause() {
+        StringBuilder line = new StringBuilder("W: ");
+        String branch = OffsetHandler.describeBranch(player.predictedVelocity);
+        line.append(branch.isEmpty() ? "plain movement" : branch);
+        line.append(" | ").append(player.uncertaintyHandler.describeBuild(player.predictedVelocity.vector));
+        line.append(String.format(Locale.ROOT, " | spd %.4f fric %.4f grav %.4f",
+                player.speed, player.friction, player.gravity));
+        line.append(" | gnd ").append(player.onGround ? "1" : "0").append(player.lastOnGround ? "1" : "0")
+                .append(" col h").append(player.horizontalCollision ? "1" : "0")
+                .append("v").append(player.verticalCollision ? "1" : "0");
+        line.append(" | pos ").append(player.packetStateData.didLastMovementIncludePosition ? "1" : "0")
+                .append(" tp ").append(player.packetStateData.lastPacketWasTeleport ? "1" : "0")
+                .append(" dup ").append(player.packetStateData.lastPacketWasOnePointSeventeenDuplicate ? "1" : "0");
+        line.append(" | ").append(describeInput(player));
+        return line.toString();
+    }
+
+    public static String describeInput(GrimPlayer player) {
+        if (!player.supportsEndTick()) return "input n/a";
+        KnownInput input = player.packetStateData.knownInput;
+        return "input F" + (input.forward() ? "1" : "0") + " B" + (input.backward() ? "1" : "0")
+                + " L" + (input.left() ? "1" : "0") + " R" + (input.right() ? "1" : "0")
+                + " J" + (input.jump() ? "1" : "0") + " S" + (input.shift() ? "1" : "0")
+                + " Sp" + (input.sprint() ? "1" : "0");
+    }
+
+    private String describeUncertainty() {
+        UncertaintyHandler uncertainty = player.uncertaintyHandler;
+        StringBuilder line = new StringBuilder("U: ");
+        line.append(String.format(java.util.Locale.ROOT, "miss x%+.4f y%+.4f z%+.4f", uncertainty.offsetX, uncertainty.offsetY, uncertainty.offsetZ));
+
+        String box = uncertainty.describeBox();
+        line.append(" | slack ").append(box.isEmpty() ? "none" : box);
+
+        String sources = uncertainty.describeSources(6);
+        if (!sources.isEmpty()) line.append(" | from ").append(sources);
+
+        String cut = uncertainty.describeReduction();
+        if (!cut.isEmpty()) line.append(" | offset cut ").append(cut);
+
+        return line.toString();
     }
 
     private void checkTimeouts() {

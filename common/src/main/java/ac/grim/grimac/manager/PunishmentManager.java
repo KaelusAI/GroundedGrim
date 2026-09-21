@@ -26,6 +26,7 @@ public class PunishmentManager implements ConfigReloadable {
     private String experimentalSymbol = "*";
     private String alertString;
     private boolean testMode;
+    private String reasonFormat;
     private String proxyAlertString = "";
 
     public PunishmentManager(GrimPlayer player) {
@@ -41,6 +42,8 @@ public class PunishmentManager implements ConfigReloadable {
                 "alerts-format",
                 "%prefix% &f%player% &bfailed <hover:show_text:\"&b%check_name%%experimental%\\n&8Description: &f%description%\">&f%check_name%%experimental%</hover> &f(x&c%vl%&f) &7%verbose%"
         );
+
+        reasonFormat = config.getStringElse("alerts-reason-format", "\n&8Reason: &f%reason%");
 
         testMode = config.getBooleanElse("test-mode", false);
 
@@ -124,7 +127,16 @@ public class PunishmentManager implements ConfigReloadable {
                 .replace("%vl%", Integer.toString(vl))
                 .replace("%description%", check.getDescription())
                 .replace("%stable_key%", check.getStableKey())
-        ).replace("%verbose%", MessageUtil.miniMessageSafe(verbose));
+        ).replace("%verbose%", MessageUtil.miniMessageSafe(verbose))
+                .replace("%reason%", buildReason(check));
+    }
+
+    private String buildReason(Check check) {
+        String reason = check.getAlertReason();
+        if (reason.isEmpty()) return "";
+        // escapeTags leaves quotes alone, and the reason lands inside a hover:show_text:"..." argument
+        return reasonFormat.replace("%reason%",
+                MessageUtil.miniMessageSafe(reason.replace('"', '\'').replace('\\', '/')));
     }
 
     public boolean handleAlert(GrimPlayer player, String verbose, Check check) {

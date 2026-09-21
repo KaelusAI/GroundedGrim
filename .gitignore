@@ -77,4 +77,5 @@ run/
 fabric/run/
 
 .ignored/
+.claude/
 /workspace.gradle.kts

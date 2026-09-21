@@ -1,5 +1,5 @@
 # \u00BB は » (二重 >>)です。ANSI と UTF-8 はこれを異なる方法で解釈します... 場合によっては ? と表示されることがあります。
-prefix: "&bGrim &8\u00BB"
+prefix: "&bGroundedGrim &8\u00BB"
 
 alerts-enabled: "%prefix% &fアラートが有効になりました"
 alerts-disabled: "%prefix% &fアラートが無効になりました"
@@ -39,8 +39,10 @@ webhook-test-failed: "Discord webhook test failed!"
 # %experimental%
 # %vl% - 違反回数
 # %verbose% - チェックからの追加情報（全てのチェックが情報を追加するわけではありません）
-alerts-format: "%prefix% &f%player% が <hover:show_text:\"&b%check_name%%experimental%\n&8説明: &f%description%\">&b%check_name%%experimental%</hover> &fに失敗しました (x&c%vl%&f) &7%verbose%"
-alerts-format-proxy: "%prefix% &f[&cプロキシ&f] &f%player% が <hover:show_text:\"&b%check_name%%experimental%\n&8説明: &f%description%\">&b%check_name%%experimental%</hover> &fに失敗しました (x&c%vl%&f) &7%verbose%"
+# %reason% - what the check was uncertain about when it flagged, empty for checks that do not name one
+alerts-reason-format: "\n&8理由: &f%reason%"
+alerts-format: "%prefix% &f%player% が <hover:show_text:\"&b%check_name%%experimental%\n&8説明: &f%description%%reason%\">&b%check_name%%experimental%</hover> &fに失敗しました (x&c%vl%&f) &7%verbose%"
+alerts-format-proxy: "%prefix% &f[&cプロキシ&f] &f%player% が <hover:show_text:\"&b%check_name%%experimental%\n&8説明: &f%description%%reason%\">&b%check_name%%experimental%</hover> &fに失敗しました (x&c%vl%&f) &7%verbose%"
 experimental-symbol: "*"
 
 profile:
@@ -107,7 +109,7 @@ grim-history-crashed-marker: " &8(&cクラッシュ&8)"
 #   %client_version% %client_brand% %duration% %timeago%
 #   %violations% %unique_checks% %bucket_size%
 grim-history-detail-header: "%prefix% &b&f%player% &bの第 &f%ordinal% &b回セッションの詳細："
-grim-history-detail-meta1: "%prefix% &bGrim: &f%grim_version%&b, サーバー: &f%server_name%&b, 時間: &f%duration%&b, 日時: &7%timeago% 前"
+grim-history-detail-meta1: "%prefix% &bGroundedGrim: &f%grim_version%&b, サーバー: &f%server_name%&b, 時間: &f%duration%&b, 日時: &7%timeago% 前"
 grim-history-detail-meta2: "%prefix% &bクライアント: &f%client_version%&b, ブランド: &f%client_brand%"
 grim-history-detail-violations-header: "%prefix% &b違反: &8(合計 %violations% 件、ユニーク %unique_checks% 件)"
 grim-history-detail-empty: "%prefix% &7- (なし)"
@@ -129,4 +131,4 @@ grim-history-check-count: "&f%check_name%&7 x&c%count%"
 
 # スキーマ用マーカー — config.yml のヘッダーコメントを参照。
 config-flavor: V2
-config-version: 2
+config-version: 3

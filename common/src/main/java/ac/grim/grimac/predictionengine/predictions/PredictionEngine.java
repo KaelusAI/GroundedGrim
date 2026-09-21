@@ -3,6 +3,7 @@ package ac.grim.grimac.predictionengine.predictions;
 import ac.grim.grimac.player.GrimPlayer;
 import ac.grim.grimac.predictionengine.EntityPushSimulator;
 import ac.grim.grimac.predictionengine.SneakingEstimator;
+import ac.grim.grimac.predictionengine.UncertaintyHandler;
 import ac.grim.grimac.predictionengine.movementtick.MovementTickerPlayer;
 import ac.grim.grimac.predictionengine.predictions.input.Input;
 import ac.grim.grimac.predictionengine.predictions.input.InputTransformer;
@@ -100,6 +101,7 @@ public class PredictionEngine {
 
         for (VectorData clientVelAfterInput : possibleVelocities) {
             Vector3dm primaryPushMovement = handleStartingVelocityUncertainty(player, clientVelAfterInput, player.actualMovement);
+            player.uncertaintyHandler.stashBoxTerms(clientVelAfterInput.vector, primaryPushMovement);
 
             Vector3dm bestTheoreticalCollisionResult = VectorUtils.cutBoxToVector(player.actualMovement, new SimpleCollisionBox(0, Math.min(0, primaryPushMovement.getY()), 0, primaryPushMovement.getX(), Math.max(0.6, primaryPushMovement.getY()), primaryPushMovement.getZ()).sort());
             // Check if this vector could ever possible beat the last vector in terms of accuracy
@@ -165,6 +167,7 @@ public class PredictionEngine {
             if (resultAccuracy < bestInput) {
                 bestCollisionVel = clientVelAfterInput.returnNewModified(outputVel, VectorData.VectorType.BestVelPicked);
                 bestCollisionVel.preUncertainty = clientVelAfterInput;
+                player.uncertaintyHandler.commitBoxTerms();
                 beforeCollisionMovement = primaryPushMovement;
                 realBeforeCollisionMovement = realPrimaryPushMovement;
 
@@ -498,17 +501,22 @@ public class PredictionEngine {
     public Vector3dm handleStartingVelocityUncertainty(GrimPlayer player, VectorData vector, Vector3dm targetVec) {
         double avgColliding = Collections.max(player.uncertaintyHandler.collidingEntities);
 
-        double additionHorizontal = player.uncertaintyHandler.getOffsetHorizontal(vector);
-        double additionVertical = player.uncertaintyHandler.getVerticalOffset(vector);
+        final double[] terms = player.uncertaintyHandler.boxTermScratch;
+        player.uncertaintyHandler.beginBoxTerms();
+
+        double additionHorizontal = terms[UncertaintyHandler.TERM_POINT_THREE_H] = player.uncertaintyHandler.getOffsetHorizontal(vector);
+        double additionVertical = terms[UncertaintyHandler.TERM_POINT_THREE_V] = player.uncertaintyHandler.getVerticalOffset(vector);
 
         double pistonX = Collections.max(player.uncertaintyHandler.pistonX);
         double pistonY = Collections.max(player.uncertaintyHandler.pistonY);
         double pistonZ = Collections.max(player.uncertaintyHandler.pistonZ);
 
         if (player.isGliding && player.wasGliding) {
+            terms[UncertaintyHandler.TERM_LAST_OFFSET] = Math.min(0.05, player.uncertaintyHandler.lastHorizontalOffset);
             additionHorizontal += Math.min(0.05, player.uncertaintyHandler.lastHorizontalOffset);
             additionVertical += Math.min(0.05, player.uncertaintyHandler.lastVerticalOffset);
         } else {
+            terms[UncertaintyHandler.TERM_LAST_OFFSET] = player.uncertaintyHandler.lastHorizontalOffset;
             additionHorizontal += player.uncertaintyHandler.lastHorizontalOffset;
             additionVertical += player.uncertaintyHandler.lastVerticalOffset;
         }
@@ -523,16 +531,19 @@ public class PredictionEngine {
         // For example, try toggling not using elytra to flying without this hack
         double bonusY = 0;
         if (player.uncertaintyHandler.lastFlyingStatusChange.hasOccurredSince(4)) {
+            terms[UncertaintyHandler.TERM_FLIGHT_TOGGLE] = 0.3;
             additionHorizontal += 0.3;
             bonusY += 0.3;
         }
 
         if (player.uncertaintyHandler.lastUnderwaterFlyingHack.hasOccurredSince(9)) {
+            terms[UncertaintyHandler.TERM_UNDERWATER_FLIGHT] = 0.2;
             bonusY += 0.2;
         }
 
         if (player.isFlying && player.flyingPredictionEnabled) {
             double scaledTolerance = Math.min(0.5, player.flyingPredictionTolerance * (player.flySpeed / 0.05));
+            terms[UncertaintyHandler.TERM_FLYING] = scaledTolerance;
             additionHorizontal += scaledTolerance;
             bonusY += scaledTolerance;
         }
@@ -542,12 +553,14 @@ public class PredictionEngine {
         // cannot keep this window open continuously.
         if (player.isGliding && (player.onGround || player.lastOnGround || player.verticalCollision)
                 && player.uncertaintyHandler.lastGlidingChange.hasOccurredSince(2)) {
+            terms[UncertaintyHandler.TERM_GLIDE_LAUNCH] = 0.45;
             additionHorizontal += Math.min(0.3, player.clientVelocity.length() * 0.15);
             bonusY += 0.45;
         }
 
         if (player.uncertaintyHandler.lastGlidingChange.hasOccurredSince(4)) {
             double decay = 1.0 - player.uncertaintyHandler.lastGlidingChange.getTicksSince() / 5.0;
+            terms[UncertaintyHandler.TERM_GLIDE_TOGGLE] = 0.20 * decay;
             additionHorizontal += 0.10 * decay;
             bonusY += 0.20 * decay;
         }
@@ -556,11 +569,13 @@ public class PredictionEngine {
 
         if (player.uncertaintyHandler.lastHardCollidingLerpingEntity.hasOccurredSince(2)) {
             double entityUncertainty = isElytraFlight ? 0.03 : 0.1;
+            terms[UncertaintyHandler.TERM_HARD_ENTITY] = entityUncertainty;
             additionHorizontal += entityUncertainty;
             bonusY += entityUncertainty;
         }
 
         if (!isElytraFlight && (pistonX != 0 || pistonY != 0 || pistonZ != 0)) {
+            terms[UncertaintyHandler.TERM_PISTON] = 0.1;
             additionHorizontal += 0.1;
             bonusY += 0.1;
         }
@@ -571,11 +586,13 @@ public class PredictionEngine {
         // compounding, server-gated, no fly/step.
         if (!isElytraFlight && (player.likelyKB != null || player.firstBreadKB != null
                 || player.uncertaintyHandler.lastPushableNear.hasOccurredSince(20))) {
+            terms[UncertaintyHandler.TERM_KB_RESYNC] = 0.003;
             bonusY += 0.003;
         }
 
         // Handle horizontal fluid pushing within 0.03
         double horizontalFluid = player.pointThreeEstimator.getHorizontalFluidPushingUncertainty(vector);
+        terms[UncertaintyHandler.TERM_FLUID] = horizontalFluid;
         additionHorizontal += horizontalFluid;
 
         // KB / explosion vectors need the legacy blanket width - anti-KB check at PredictionEngine.java:212
@@ -591,6 +608,7 @@ public class PredictionEngine {
         Vector3dm minVector;
         Vector3dm maxVector;
         if (useLegacyPushUncertainty) {
+            terms[UncertaintyHandler.TERM_ENTITY_PUSH] = avgColliding * 0.08;
             minVector = vector.vector.clone().add(min.subtract(uncertainty));
             maxVector = vector.vector.clone().add(max.add(uncertainty));
         } else {
@@ -599,6 +617,8 @@ public class PredictionEngine {
             double residual = Math.min(avgColliding * 0.08, 0.025);
             // floor at the vanilla per-axis push cap when a pushable entity was recently near (lag-comp overlap misses at high ping)
             if (player.uncertaintyHandler.lastPushableNear.hasOccurredSince(3)) residual = Math.max(residual, 0.05);
+            terms[UncertaintyHandler.TERM_ENTITY_PUSH] = Math.max(
+                    Math.max(residual, push.maxX), Math.max(-push.minX, Math.max(push.maxZ, -push.minZ)));
             Vector3dm minNoPush = min.clone();
             minNoPush.setX(minNoPush.getX() + Math.min(push.minX, -residual));
             minNoPush.setZ(minNoPush.getZ() + Math.min(push.minZ, -residual));
@@ -613,6 +633,7 @@ public class PredictionEngine {
         if (player.uncertaintyHandler.onGroundUncertain && vector.vector.getY() < 0 && !player.uncertaintyHandler.influencedByBouncyBlock()) {
             double movementY = Math.max(minVector.getY(), -player.getMovementThreshold());
             double bounceY = BlockProperties.getVelocityAfterVerticalCollision(player, minVector.getY(), movementY);
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_LANDING;
             if (bounceY < 0) {
                 minVector.setY(bounceY);
             } else {
@@ -622,6 +643,7 @@ public class PredictionEngine {
 
         if (isElytraFlight && (player.verticalCollision || player.lastOnGround || player.onGround)
                 && player.uncertaintyHandler.fireworksBox != null) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_ELYTRA_GROUND;
             // X/Z masking only when descending into ground (closes the level/rising ceiling-grind exploit);
             // the Y collision-stop is kept for both directions (it doesn't mask horizontal speed).
             if (vector.vector.getY() < 0) {
@@ -638,6 +660,7 @@ public class PredictionEngine {
 
         // Handles stuff like missing idle packet causing gravity to be missed (plus 0.03 of course)
         double gravityOffset = player.pointThreeEstimator.getAdditionalVerticalUncertainty(vector);
+        if (gravityOffset != 0) player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_HIDDEN_GRAVITY;
         if (gravityOffset > 0) {
             maxVector.setY(maxVector.getY() + gravityOffset);
         } else {
@@ -646,22 +669,26 @@ public class PredictionEngine {
 
         // Handle vertical fluid pushing within 0.03
         double verticalFluid = player.pointThreeEstimator.getVerticalFluidPushingUncertainty(vector);
+        if (verticalFluid != 0) player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_VERTICAL_FLUID;
         minVector.setY(minVector.getY() - verticalFluid);
 
         // Handle vertical bubble column stupidity within 0.03
         double bubbleFluid = player.pointThreeEstimator.getVerticalBubbleUncertainty(vector);
+        if (bubbleFluid != 0) player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_BUBBLE;
         maxVector.setY(maxVector.getY() + bubbleFluid);
         minVector.setY(minVector.getY() - bubbleFluid);
 
         // We can't simulate the player's Y velocity, unknown number of ticks with a gravity change
         // Feel free to simulate all 104857600000000000000000000 possibilities!
         if (!player.pointThreeEstimator.canPredictNextVerticalMovement()) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_UNKNOWN_GRAVITY;
             minVector.setY(minVector.getY() - player.compensatedEntities.self.getAttributeValue(Attributes.GRAVITY));
         }
 
         // Hidden slime block bounces by missing idle tick and 0.03
         if (!isElytraFlight && player.actualMovement.getY() >= 0 && player.uncertaintyHandler.influencedByBouncyBlock()) {
             if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty != 0 && !vector.isJump()) { // jumping overrides slime block
+                player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_SLIME;
                 if (player.uncertaintyHandler.thisTickSlimeBlockUncertainty > maxVector.getY()) {
                     maxVector.setY(player.uncertaintyHandler.thisTickSlimeBlockUncertainty);
                 }
@@ -670,6 +697,7 @@ public class PredictionEngine {
         }
 
         if (vector.isZeroPointZeroThree() && vector.isSwimHop()) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_SWIM_HOP;
             minVector.setY(minVector.getY() - 0.06); // Fluid pushing downwards hidden by 0.03
         }
 
@@ -681,6 +709,7 @@ public class PredictionEngine {
 
         // Vanilla doesn't apply levitation while gliding; gate like the slime/piston/shulker terms.
         if (!isElytraFlight) {
+            double beforeMinY = box.minY, beforeMaxY = box.maxY;
             double levitation = player.pointThreeEstimator.positiveLevitation(maxVector.getY());
             box.combineToMinimum(box.minX, levitation, box.minZ);
             levitation = player.pointThreeEstimator.positiveLevitation(minVector.getY());
@@ -689,16 +718,24 @@ public class PredictionEngine {
             box.combineToMinimum(box.minX, levitation, box.minZ);
             levitation = player.pointThreeEstimator.negativeLevitation(minVector.getY());
             box.combineToMinimum(box.minX, levitation, box.minZ);
+            if (box.minY != beforeMinY || box.maxY != beforeMaxY) {
+                player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_LEVITATION;
+            }
         }
 
 
         SneakingEstimator sneaking = player.checkManager.get(SneakingEstimator.class);
-        box.minX += sneaking.getSneakingPotentialHiddenVelocity().minX;
-        box.minZ += sneaking.getSneakingPotentialHiddenVelocity().minZ;
-        box.maxX += sneaking.getSneakingPotentialHiddenVelocity().maxX;
-        box.maxZ += sneaking.getSneakingPotentialHiddenVelocity().maxZ;
+        SimpleCollisionBox hiddenSneak = sneaking.getSneakingPotentialHiddenVelocity();
+        if (hiddenSneak.minX != 0 || hiddenSneak.minZ != 0 || hiddenSneak.maxX != 0 || hiddenSneak.maxZ != 0) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_SNEAKING;
+        }
+        box.minX += hiddenSneak.minX;
+        box.minZ += hiddenSneak.minZ;
+        box.maxX += hiddenSneak.maxX;
+        box.maxZ += hiddenSneak.maxZ;
 
         if (player.uncertaintyHandler.fireworksBox != null) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_FIREWORKS;
             box.expandMin(
                 player.uncertaintyHandler.fireworksBox.minX,
                 player.uncertaintyHandler.fireworksBox.minY,
@@ -713,6 +750,7 @@ public class PredictionEngine {
 
         SimpleCollisionBox rod = player.uncertaintyHandler.fishingRodPullBox;
         if (rod != null) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_FISHING_ROD;
             box.expandMin(rod.minX, rod.minY, rod.minZ);
             box.expandMax(rod.maxX, rod.maxY, rod.maxZ);
         }
@@ -722,6 +760,7 @@ public class PredictionEngine {
         //
         // Stuck on edge also reduces the player's movement.  It's wrong by 0.05 so hard to implement.
         if (!isElytraFlight && (player.uncertaintyHandler.stuckOnEdge.hasOccurredSince(0) || player.uncertaintyHandler.influencedBySlime())) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_EDGE_OR_SLIME;
             // Avoid changing Y axis
             box.expandToAbsoluteCoordinates(0, box.maxY, 0);
         }
@@ -762,6 +801,7 @@ public class PredictionEngine {
         // Elytra flight near a hard entity must also expand toward 0,0,0, not the old expand(0.3,0.1,0.3)
         // which opened an in-air boost (upward + horizontal).
         if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(0) || hardEntityNearby || (!isElytraFlight && player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_13) && vector.vector.getY() > 0 && vector.isZeroPointZeroThree() && !Collisions.isEmpty(player, GetBoundingBox.getBoundingBoxFromPosAndSize(player, player.lastX, vector.vector.getY() + player.lastY + 0.6, player.lastZ, 0.6f, 1.26f)))) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_HARD_ENTITY_COLLAPSE;
             box.expandToAbsoluteCoordinates(0, 0, 0);
             // vanilla entity soft-push: 0.05/tick horizontal, Y=0. Cover it for gliders without reopening upward boost.
             if (isElytraFlight && hardEntityNearby) box.expand(0.05, 0, 0.05);
@@ -772,6 +812,7 @@ public class PredictionEngine {
         // Handle missing a tick with friction in vehicles
         // TODO: Attempt to fix mojang's netcode here
         if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(1)) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_VEHICLE_FRICTION;
             float airDrag = BlockProperties.getModifiedAirDrag(0.91F, player);
             double trueFriction = player.lastOnGround ? player.friction * airDrag : airDrag;
             if (player.wasTouchingLava) trueFriction = 0.5;
@@ -789,12 +830,16 @@ public class PredictionEngine {
         }
 
         if (player.uncertaintyHandler.lastVehicleSwitch.hasOccurredSince(10)) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_VEHICLE_SWITCH;
             box.expand(0.001); // Ignore 1e-3 offsets as we don't know starting vel
         }
 
         minVector = box.min();
         maxVector = box.max();
 
+        if (pistonX != 0 || pistonY != 0 || pistonZ != 0) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_PISTON_OVERRIDE;
+        }
         if (pistonX != 0) {
             minVector.setX(Math.min(minVector.getX() - pistonX, pistonX));
             maxVector.setX(Math.max(maxVector.getX() + pistonX, pistonX));
@@ -810,9 +855,11 @@ public class PredictionEngine {
 
         if (!isElytraFlight && player.uncertaintyHandler.lastShulkerBoxNearby.hasOccurredSince(3)
                 && !hardEntityNearby) {
+            player.uncertaintyHandler.boxMutatorScratch |= UncertaintyHandler.BOX_SHULKER;
             maxVector.setY(Math.min(maxVector.getY(), 0.55));
         }
 
+        player.uncertaintyHandler.recordBoxBounds(vector.vector, minVector, maxVector);
         return VectorUtils.cutBoxToVector(targetVec, minVector, maxVector);
     }
 
